@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(move \"Lavalink (1).jar\" lavalinkLavalink.jar)",
+      "Bash(npm view:*)",
+      "Bash(npm install)",
+      "Bash(find:*)",
+      "WebSearch",
+      "WebFetch(domain:takiyo0.github.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(copy:*)",
+      "Bash(npm install:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+- Un embed QUE SIEMPRE SDEA ELÑ ULTIMO MENSAJE DEL BOT, que se actualize cada x, con información de la canción actual, y botones para volver atrás, skip, skip y stop
+- Que salga de canal cuando acabe la cola
+- Comando de lyrics
+- Publicar los slash comand en global (borrarlos todos primero)
+- Quita los logs innecesarios

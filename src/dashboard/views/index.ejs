@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<%- include('partials/head', { pageTitle: 'Inicio' }) %>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <img src="<%= basePath %>/logo.png" alt="Meditea DJ" class="hero-logo">
+                <h1>Bienvenido a Meditea DJ</h1>
+                <p>El bot de música exclusivo de Meditea Airlines</p>
+                <p class="stats">Reproduciendo en <%= bot.serverCount %> servidores</p>
+
+                <div class="hero-buttons">
+                    <% if (user) { %>
+                        <a href="<%= basePath %>/dashboard" class="btn btn-primary btn-large">Ir al Dashboard</a>
+                    <% } else { %>
+                        <a href="<%= basePath %>/auth/login" class="btn btn-primary btn-large">Iniciar Sesión con Discord</a>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <h3>Soporte para YouTube</h3>
+                    <p>Reproduce música de YouTube con la mejor calidad</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Soporte para Spotify</h3>
+                    <p>Enlaces de canciones y álbumes de Spotify</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Sistema de Colas</h3>
+                    <p>Gestiona tu lista de reproducción fácilmente</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Playlists Personalizadas</h3>
+                    <p>Guarda y carga tus playlists favoritas</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Control desde Dashboard</h3>
+                    <p>Controla la música desde tu navegador</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Alta Calidad</h3>
+                    <p>Audio de alta fidelidad con Lavalink</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

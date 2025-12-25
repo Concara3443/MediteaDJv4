@@ -1,0 +1,14 @@
+  Token:
+  ODg3MDQ2MzkwNTI0NTUxMTc4.GQyMyI.MaSpHpNYxpXbXYNkL-u2v1BqHq0PMqNMNCb32g
+
+  Client ID:
+  887046390524551178
+
+  Client Secret:
+  pWYDxMMFBuXkzHqQwFfEDQ3cKjDVbKm3
+
+  Tu User ID (Admin ID):
+  309357304531124224
+
+  Guild ID:
+  1171392715343286292
