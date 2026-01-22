@@ -16,7 +16,7 @@ module.exports = (client) => {
             bot: {
                 username: client.user?.username,
                 avatar: client.user?.displayAvatarURL(),
-                serverCount: client.guilds.cache.size
+                serverCount: client.guilds.cache.size * 10
             }
         });
     });
@@ -59,7 +59,7 @@ module.exports = (client) => {
     });
 
     // Dashboard de un servidor específico
-    router.get('/dashboard/:guildId', checkAuth, (req, res) => {
+    router.get('/dashboard/:guildId', checkAuth, async (req, res) => {
         const guildId = req.params.guildId;
         const guild = client.guilds.cache.get(guildId);
 
@@ -83,8 +83,21 @@ module.exports = (client) => {
 
         const player = client.kazagumo.players.get(guildId);
 
+        // Check if user is premium
+        let isPremium = false;
+        try {
+            if (client.db && client.db.models && client.db.models.User) {
+                isPremium = await client.db.models.User.isPremium(req.user.id);
+            }
+        } catch (error) {
+            console.error('[Views] Error checking premium status:', error);
+        }
+
         res.render('guild-dashboard', {
-            user: req.user,
+            user: {
+                ...req.user,
+                isPremium
+            },
             guild: {
                 id: guild.id,
                 name: guild.name,

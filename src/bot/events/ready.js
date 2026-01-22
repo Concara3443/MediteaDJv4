@@ -1,7 +1,8 @@
 const { ActivityType } = require('discord.js');
+const activitiesConfig = require('../../config/activities');
 
 module.exports = {
-    name: 'ready',
+    name: 'clientReady',
     once: true,
     async execute(client) {
         console.log(`[Bot] ✅ ${client.user.tag} está online!`);
@@ -74,13 +75,35 @@ module.exports = {
 
         // Actualizar presencia según el estado de Lavalink
         if (lavalinkConnected) {
-            client.user.setPresence({
-                activities: [{
-                    name: '🎵 Música para ti',
-                    type: ActivityType.Playing
-                }],
-                status: 'online'
-            });
+            // Iniciar sistema de actividades rotativas
+            let currentActivityIndex = 0;
+
+            const updateActivity = () => {
+                const activity = activitiesConfig.activities[currentActivityIndex];
+                let activityName = activity.name;
+
+                // Reemplazar variables dinámicas
+                activityName = activityName.replace('{servers}', client.guilds.cache.size);
+                activityName = activityName.replace('{users}', client.users.cache.size);
+
+                client.user.setPresence({
+                    activities: [{
+                        name: activityName,
+                        type: activity.type
+                    }],
+                    status: activitiesConfig.status
+                });
+
+                // Siguiente actividad
+                currentActivityIndex = (currentActivityIndex + 1) % activitiesConfig.activities.length;
+            };
+
+            // Establecer primera actividad
+            updateActivity();
+
+            // Rotar actividades cada 60 segundos
+            setInterval(updateActivity, activitiesConfig.rotationInterval);
+
             console.log('[Bot] ✅ Bot completamente listo para usar!');
         } else {
             client.user.setPresence({

@@ -11,8 +11,21 @@ class DashboardServer {
         this.client = client;
         this.app = express();
         this.server = http.createServer(this.app);
-        this.io = new Server(this.server);
+
+        // Configurar Socket.IO (nginx hará el proxy desde /mediteadj/socket.io/ a /socket.io/)
+        this.io = new Server(this.server, {
+            path: '/socket.io/',
+            cors: {
+                origin: process.env.DASHBOARD_URL || '*',
+                methods: ['GET', 'POST']
+            },
+            transports: ['websocket', 'polling']
+        });
+
         this.port = process.env.DASHBOARD_PORT || 3000;
+
+        // Guardar io en el cliente para que sea accesible desde eventos del bot
+        this.client.io = this.io;
 
         this.setupMiddleware();
         this.setupAuth();
@@ -28,7 +41,7 @@ class DashboardServer {
         this.app.set('view engine', 'ejs');
         this.app.set('views', path.join(__dirname, 'views'));
 
-        // Static files
+        // Static files (nginx ya maneja el rewrite de /mediteadj/ a /)
         this.app.use(express.static(path.join(__dirname, 'public')));
 
         // Body parser
@@ -103,7 +116,7 @@ class DashboardServer {
         this.app.use('/auth', authRouter);
 
         // Rutas de API
-        const apiRouter = require('./routes/api')(this.client, this.io);
+        const apiRouter = require('./routes/api')(this.client, this.io, this.client.db);
         this.app.use('/api', this.checkAuth, apiRouter);
 
         // Rutas de vistas

@@ -17,6 +17,9 @@
             <div class="player-section">
                 <h2>Reproductor de Música</h2>
 
+                <!-- Search Widget -->
+                <%- include('partials/search-widget') %>
+
                 <div id="player-status" class="player-status">
                     <% if (player.connected) { %>
                         <span class="status status-active">Conectado</span>
@@ -89,13 +92,19 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Lyrics Panel -->
+            <%- include('partials/lyrics-panel') %>
         </div>
     </main>
 
     <script>
         const guildId = '<%= guild.id %>';
         const basePath = '<%= basePath %>';
-        const socket = io();
+        // Socket.IO debe usar el path completo para que nginx haga el proxy correctamente
+        const socket = io({
+            path: '/mediteadj/socket.io/'
+        });
 
         // Estado del player
         let playerState = {
@@ -288,5 +297,21 @@
             }
         }, 1000);
     </script>
+
+    <!-- Search Functionality -->
+    <script src="<%= basePath %>/js/search.js"></script>
+    <script>
+        // Initialize search
+        initializeSearch(guildId, basePath, <%= user.isPremium ? 'true' : 'false' %>);
+    </script>
+
+    <!-- Lyrics Functionality -->
+    <script src="<%= basePath %>/js/lyrics.js"></script>
+    <script>
+        // Initialize lyrics
+        initializeLyrics(guildId, basePath, <%= user.isPremium ? 'true' : 'false' %>, socket);
+    </script>
+
+    <%- include('partials/footer') %>
 </body>
 </html>

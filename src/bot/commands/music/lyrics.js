@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { Client } = require('genius-lyrics');
 const { COLORS } = require('../../../config/constants');
+const { getYouTubeMetadata } = require('../../utils/youtubeMetadata');
 
 // Inicializar cliente de Genius con Access Token
 const genius = new Client(process.env.GENIUS_ACCESS_TOKEN);
@@ -36,16 +37,47 @@ module.exports = {
                     });
                 }
 
-                trackTitle = player.queue.current.title;
+                const currentTrack = player.queue.current;
 
-                // Limpiar el título de la canción
-                searchQuery = cleanSearchQuery(`${player.queue.current.author} ${trackTitle}`);
+                // LOG: Información de la canción actual
+                console.log('[Lyrics] ========== BÚSQUEDA DE LETRA ==========');
+
+                // Obtener metadata limpia de Spotify
+                const metadata = await getYouTubeMetadata(currentTrack.uri, currentTrack.author, currentTrack.title);
+
+                // SOLO funcionar si la canción tiene metadata de YouTube Music
+                if (!metadata || !metadata.hasMetadata) {
+                    console.log('[Lyrics] ❌ Canción sin metadata de YouTube Music');
+                    return interaction.editReply({
+                        embeds: [new EmbedBuilder()
+                            .setColor(COLORS.ERROR)
+                            .setTitle('❌ Metadata no disponible')
+                            .setDescription('Esta canción no tiene metadata de YouTube Music.\n\n**El comando `/lyrics` sin argumentos solo funciona con canciones de YouTube Music.**\n\nPuedes:\n• Usar `/lyrics <nombre de la canción>` para buscar manualmente\n• Reproducir una canción de YouTube Music con metadata limpia')
+                        ]
+                    });
+                }
+
+                // Usar metadata de YouTube Music (LIMPIA)
+                const searchArtist = metadata.artist;
+                const searchTitle = metadata.title;
+                console.log('[Lyrics] ✅ Metadata de YouTube Music:', { searchArtist, searchTitle });
+
+                searchQuery = `${searchArtist} ${searchTitle}`;
+                trackTitle = currentTrack.title; // Para el embed
             } else {
                 searchQuery = cleanSearchQuery(interaction.options.getString('cancion'));
             }
 
             // Buscar la canción en Genius
             const searches = await genius.songs.search(searchQuery);
+
+            console.log('[Lyrics] Resultados encontrados:', searches.length);
+            if (searches.length > 0) {
+                console.log('[Lyrics] Primeros 3 resultados:');
+                searches.slice(0, 3).forEach((song, i) => {
+                    console.log(`[Lyrics]   ${i + 1}. "${song.title}" - ${song.artist.name}`);
+                });
+            }
 
             if (!searches || searches.length === 0) {
                 return interaction.editReply({
@@ -60,18 +92,45 @@ module.exports = {
             // Filtrar resultados para evitar discografías, álbumes, listas, etc.
             const filteredResults = searches.filter(song => {
                 const title = song.title.toLowerCase();
-                return !title.includes('discografía') &&
-                       !title.includes('discography') &&
-                       !title.includes('tracklist') &&
-                       !title.includes('album') &&
-                       !title.includes(' em ') &&  // "2020 em 2020" y similares
-                       !title.includes(' in ') &&  // "Albums in 2020"
-                       !title.match(/^\d{4}/) &&   // Títulos que empiezan con año
-                       !title.includes('list') &&
-                       !title.includes('collection');
+                const fullTitle = `${title} ${song.artist.name.toLowerCase()}`;
+
+                // Excluir discografías y listas
+                if (title.includes('discografía') ||
+                    title.includes('discography') ||
+                    title.includes('tracklist') ||
+                    title.includes('álbum') ||
+                    title.includes('album') ||
+                    title.includes(' list') ||
+                    title.includes('playlist') ||
+                    title.includes('collection') ||
+                    title.includes('canciones de ') ||
+                    title.includes('songs by ') ||
+                    title.includes('community') ||
+                    title.includes('favoritos') ||
+                    title.includes('favorites') ||
+                    title.includes('lieblingsalben') ||
+                    title.includes('top ') ||
+                    title.includes('best of') ||
+                    title.includes('greatest hits') ||
+                    title.match(/^\d{4}/) || // Empieza con año
+                    fullTitle.includes('música en español') ||
+                    fullTitle.includes('music in')) {
+                    return false;
+                }
+
+                // Excluir si el título es solo el nombre del artista
+                const artistName = song.artist.name.toLowerCase();
+                if (title === artistName || title === `${artistName} lyrics`) {
+                    return false;
+                }
+
+                return true;
             });
 
+            console.log('[Lyrics] Resultados después de filtrar:', filteredResults.length);
+
             if (filteredResults.length === 0) {
+                console.log('[Lyrics] ❌ Todos los resultados fueron filtrados (álbumes/discografías)');
                 return interaction.editReply({
                     embeds: [new EmbedBuilder()
                         .setColor(COLORS.WARNING)
@@ -83,6 +142,8 @@ module.exports = {
 
             // Obtener la primera canción válida
             const song = filteredResults[0];
+            console.log('[Lyrics] ✅ Canción seleccionada:', `"${song.title}" - ${song.artist.name}`);
+            console.log('[Lyrics] ==========================================');
 
             // Obtener las letras
             let lyrics = await song.lyrics();
@@ -185,12 +246,25 @@ module.exports = {
  */
 function cleanSearchQuery(query) {
     return query
+        // Remover emojis al inicio
+        .replace(/^[\u{1F000}-\u{1F9FF}][\u{FE00}-\u{FE0F}]?\s*/gu, '')
+        // Remover metadata de álbumes, playlists, etc.
+        .replace(/álbumes?\s+de\s+música.*/gi, '')
+        .replace(/playlist.*/gi, '')
+        .replace(/collection.*/gi, '')
+        .replace(/discograf[íi]a.*/gi, '')
+        .replace(/en\s+español\s+\d{4}/gi, '')
+        .replace(/in\s+(english|spanish|português)\s+\d{4}/gi, '')
+        // Remover indicadores de video oficial
         .replace(/\(official\s*(video|audio|music\s*video|lyric\s*video)?\)/gi, '')
         .replace(/\[official\s*(video|audio|music\s*video|lyric\s*video)?\]/gi, '')
         .replace(/-\s*(official\s*)?(video|audio|music\s*video|lyric\s*video)/gi, '')
+        // Remover "- Topic"
         .replace(/\s*-\s*topic$/gi, '')
+        // Remover paréntesis/corchetes vacíos
         .replace(/\s*\(\s*\)/g, '')
         .replace(/\s*\[\s*\]/g, '')
+        // Limpiar espacios múltiples
         .replace(/\s+/g, ' ')
         .trim();
 }

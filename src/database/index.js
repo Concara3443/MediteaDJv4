@@ -2,6 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
 const PlaylistModel = require('./models/Playlist');
+const UserModel = require('./models/User');
 
 class DatabaseManager {
     constructor(dbPath) {
@@ -48,20 +49,48 @@ class DatabaseManager {
     async runMigrations() {
         return new Promise((resolve, reject) => {
             try {
-                const migrationPath = path.join(__dirname, 'migrations', 'initial.sql');
-                const migration = fs.readFileSync(migrationPath, 'utf8');
+                // Array of migration files in order
+                const migrations = ['initial.sql', 'premium.sql'];
+                let completed = 0;
 
-                // Ejecutar todas las sentencias SQL
-                this.db.exec(migration, (err) => {
-                    if (err) {
-                        console.error('[Database] Error al ejecutar migraciones:', err);
-                        reject(err);
+                const executeMigration = (filename) => {
+                    const migrationPath = path.join(__dirname, 'migrations', filename);
+
+                    // Check if file exists
+                    if (!fs.existsSync(migrationPath)) {
+                        console.log(`[Database] Skipping ${filename} (not found)`);
+                        completed++;
+                        if (completed === migrations.length) {
+                            console.log('[Database] Migraciones ejecutadas exitosamente');
+                            resolve();
+                        }
                         return;
                     }
 
-                    console.log('[Database] Migraciones ejecutadas exitosamente');
-                    resolve();
-                });
+                    const migration = fs.readFileSync(migrationPath, 'utf8');
+
+                    // Ejecutar sentencias SQL
+                    this.db.exec(migration, (err) => {
+                        if (err) {
+                            console.error(`[Database] Error al ejecutar ${filename}:`, err);
+                            reject(err);
+                            return;
+                        }
+
+                        console.log(`[Database] Migración ${filename} ejecutada`);
+                        completed++;
+
+                        if (completed === migrations.length) {
+                            console.log('[Database] Migraciones ejecutadas exitosamente');
+                            resolve();
+                        } else {
+                            executeMigration(migrations[completed]);
+                        }
+                    });
+                };
+
+                // Start with first migration
+                executeMigration(migrations[0]);
             } catch (error) {
                 console.error('[Database] Error al ejecutar migraciones:', error);
                 reject(error);
@@ -71,6 +100,7 @@ class DatabaseManager {
 
     initializeModels() {
         this.models.Playlist = new PlaylistModel(this.db);
+        this.models.User = new UserModel(this.db);
         console.log('[Database] Modelos inicializados');
     }
 

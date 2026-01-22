@@ -4,7 +4,7 @@ const DashboardServer = require('./server');
 const bot = require('../bot');
 
 // Esperar a que el bot esté listo antes de iniciar el dashboard
-bot.once('ready', () => {
+bot.once('clientReady', () => {
     console.log('[Dashboard] Bot está listo, iniciando dashboard...');
 
     // Crear instancia del dashboard

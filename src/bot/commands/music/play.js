@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const MusicEmbeds = require('../../utils/embeds');
 const PermissionChecker = require('../../utils/permissions');
 const { LIMITS } = require('../../../config/constants');
+const { getYouTubeMetadata } = require('../../utils/youtubeMetadata');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -50,6 +51,8 @@ module.exports = {
             // Manejar playlists
             if (result.type === 'PLAYLIST') {
                 for (const track of result.tracks) {
+                    // Guardar query original para lyrics
+                    track.originalQuery = query;
                     player.queue.add(track);
                 }
 
@@ -66,7 +69,33 @@ module.exports = {
             }
 
             // Manejar canción individual
-            const track = result.tracks[0];
+            // Priorizar canciones con metadata de YouTube Music
+            let track = result.tracks[0];
+
+            console.log('[Play] Buscando canción con metadata...');
+            for (const candidateTrack of result.tracks.slice(0, 5)) {
+                if (candidateTrack.uri && candidateTrack.uri.includes('youtube.com')) {
+                    try {
+                        const metadata = await getYouTubeMetadata(candidateTrack.uri, candidateTrack.author, candidateTrack.title);
+                        if (metadata && metadata.hasMetadata) {
+                            track = candidateTrack;
+                            console.log('[Play] ✅ Priorizando canción con metadata:', metadata.title);
+                            break;
+                        }
+                    } catch (error) {
+                        console.log('[Play] Error verificando metadata:', error.message);
+                    }
+                }
+            }
+
+            if (track !== result.tracks[0]) {
+                console.log('[Play] 🎵 Se seleccionó una canción con metadata en lugar de la primera');
+            } else {
+                console.log('[Play] ⚠️ Usando primera canción (sin metadata encontrada)');
+            }
+
+            // Guardar query original para lyrics (limpio, sin URLs)
+            track.originalQuery = query;
 
             // Verificar límite de cola
             const queueSize = player.queue?.length || 0;

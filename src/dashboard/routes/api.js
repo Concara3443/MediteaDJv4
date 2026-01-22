@@ -1,6 +1,6 @@
 const express = require('express');
 
-module.exports = (client, io) => {
+module.exports = (client, io, db) => {
     const router = express.Router();
 
     // Obtener información de un servidor
@@ -59,7 +59,10 @@ module.exports = (client, io) => {
                     requester: {
                         id: player.queue.current.requester.id,
                         username: player.queue.current.requester.username,
-                        avatar: player.queue.current.requester.displayAvatarURL()
+                        avatar: player.queue.current.requester &&
+                                typeof player.queue.current.requester.displayAvatarURL === 'function'
+                            ? player.queue.current.requester.displayAvatarURL()
+                            : 'https://cdn.discordapp.com/embed/avatars/0.png'
                     }
                 } : null,
                 queue: player.queue.map(track => ({
@@ -241,6 +244,165 @@ module.exports = (client, io) => {
         } catch (error) {
             console.error('[API] Error al reproducir:', error);
             res.status(500).json({ error: 'Error interno del servidor' });
+        }
+    });
+
+    // Search for tracks
+    router.get('/guilds/:guildId/search', async (req, res) => {
+        try {
+            const { query } = req.query;
+
+            if (!query) {
+                return res.status(400).json({ error: 'Query is required' });
+            }
+
+            // Search using Kazagumo
+            const result = await client.kazagumo.search(query, {
+                requester: req.user
+            });
+
+            if (!result || !result.tracks || result.tracks.length === 0) {
+                return res.json({ tracks: [] });
+            }
+
+            // Return top 10 results
+            const tracks = result.tracks.slice(0, 10).map(track => ({
+                title: track.title,
+                author: track.author,
+                duration: track.length,
+                thumbnail: track.thumbnail,
+                uri: track.uri
+            }));
+
+            res.json({ tracks });
+        } catch (error) {
+            console.error('[API] Error searching tracks:', error);
+            res.status(500).json({ error: 'Error al buscar canciones' });
+        }
+    });
+
+    // Get lyrics for current track
+    router.get('/guilds/:guildId/lyrics', async (req, res) => {
+        try {
+            const guildId = req.params.guildId;
+            const { title, artist } = req.query;
+
+            if (!title || !artist) {
+                return res.status(400).json({ error: 'Title and artist are required' });
+            }
+
+            // Get the player to extract the URI
+            const player = client.kazagumo.players.get(guildId);
+            let trackUri = null;
+
+            if (player && player.queue.current && player.queue.current.uri) {
+                trackUri = player.queue.current.uri;
+            }
+
+            // SOLO funcionar si la canción tiene metadata de Spotify
+            if (trackUri && trackUri.includes('youtube.com')) {
+                const { getYouTubeMetadata } = require('../../bot/utils/youtubeMetadata');
+
+                try {
+                    const metadata = await getYouTubeMetadata(trackUri, artist, title);
+
+                    if (!metadata || !metadata.hasMetadata) {
+                        console.log('[API Lyrics] ❌ Canción sin metadata de Spotify');
+                        return res.json({
+                            error: 'Esta canción no tiene metadata de Spotify. Las letras solo están disponibles para canciones con metadata limpia.',
+                            lyrics: null
+                        });
+                    }
+
+                    console.log('[API Lyrics] ✅ Metadata verificada:', metadata.title);
+                } catch (error) {
+                    console.error('[API Lyrics] Error verificando metadata:', error.message);
+                    return res.json({
+                        error: 'No se pudo verificar la metadata de la canción',
+                        lyrics: null
+                    });
+                }
+            }
+
+            // Use lyrics sync utility
+            const lyricsSync = require('../../bot/utils/lyricsSync');
+            const result = await lyricsSync.fetchLyrics(title, artist, trackUri);
+
+            if (result.error) {
+                return res.json({
+                    error: result.error,
+                    lyrics: null
+                });
+            }
+
+            res.json(result);
+        } catch (error) {
+            console.error('[API] Error fetching lyrics:', error);
+            res.status(500).json({ error: 'Error al obtener las letras' });
+        }
+    });
+
+    // Add track to queue from dashboard
+    router.post('/guilds/:guildId/player/add', async (req, res) => {
+        try {
+            const guildId = req.params.guildId;
+            const { trackUri, playNow } = req.body;
+
+            if (!trackUri) {
+                return res.status(400).json({ error: 'trackUri is required' });
+            }
+
+            // Get player
+            let player = client.kazagumo.players.get(guildId);
+
+            if (!player) {
+                return res.status(400).json({
+                    error: 'No hay reproductor activo. Usa /play en Discord primero.'
+                });
+            }
+
+            // Search for the track by URI
+            const result = await client.kazagumo.search(trackUri, {
+                requester: req.user
+            });
+
+            if (!result || !result.tracks || result.tracks.length === 0) {
+                return res.status(404).json({ error: 'No se encontró la canción' });
+            }
+
+            const track = result.tracks[0];
+
+            if (playNow) {
+                // Clear queue and play immediately
+                player.queue.clear();
+                player.queue.add(track);
+                if (!player.playing) {
+                    await player.play();
+                } else {
+                    player.skip();
+                }
+            } else {
+                // Add to queue
+                player.queue.add(track);
+                if (!player.playing && !player.paused) {
+                    await player.play();
+                }
+            }
+
+            // Emit socket update
+            io.to(`guild-${guildId}`).emit('player-update', getPlayerData(player));
+
+            res.json({
+                success: true,
+                track: {
+                    title: track.title,
+                    author: track.author,
+                    duration: track.length
+                }
+            });
+        } catch (error) {
+            console.error('[API] Error adding track:', error);
+            res.status(500).json({ error: 'Error al añadir la canción' });
         }
     });
 

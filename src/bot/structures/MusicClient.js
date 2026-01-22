@@ -29,6 +29,9 @@ class MusicClient extends Client {
     }
 
     async initialize() {
+        // Adjuntar base de datos al cliente (dbManager tiene models y db)
+        this.db = global.dbManager;
+
         // Configuración de Lavalink
         const lavalinkConfig = {
             name: 'Lavalink',
@@ -168,6 +171,7 @@ class MusicClient extends Client {
         const rest = new REST().setToken(this.config.token);
 
         try {
+            /* BORRADO DE COMANDOS DESHABILITADO - Solo descomentar si necesitas limpiar comandos
             // PASO 1: Borrar todos los comandos existentes
             console.log('[Commands] 🗑️ Borrando comandos anteriores...');
 
@@ -194,8 +198,9 @@ class MusicClient extends Client {
             } catch (err) {
                 console.log('[Commands] ⚠️ No se pudieron borrar comandos globales:', err.message);
             }
+            */
 
-            // PASO 2: Registrar comandos GLOBALMENTE
+            // Registrar comandos GLOBALMENTE
             console.log(`[Commands] 📤 Registrando ${commands.length} comandos GLOBALMENTE...`);
             const data = await rest.put(
                 Routes.applicationCommands(this.config.clientId),
