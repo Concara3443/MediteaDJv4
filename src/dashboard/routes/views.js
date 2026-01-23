@@ -36,7 +36,11 @@ module.exports = (client) => {
         const userGuilds = req.user.guilds || [];
         const botGuilds = client.guilds.cache;
 
-        // Filtrar solo los servidores donde el bot está presente
+        // Permiso MANAGE_GUILD (0x20 = 32) o ADMINISTRATOR (0x8 = 8)
+        const MANAGE_GUILD = 0x20;
+        const ADMINISTRATOR = 0x8;
+
+        // Filtrar servidores donde el bot está presente
         const mutualGuilds = userGuilds
             .filter(userGuild => botGuilds.has(userGuild.id))
             .map(userGuild => {
@@ -52,9 +56,27 @@ module.exports = (client) => {
                 };
             });
 
+        // Filtrar servidores donde el usuario puede invitar al bot pero el bot no está
+        const invitableGuilds = userGuilds
+            .filter(userGuild => {
+                // El bot NO está en el servidor
+                if (botGuilds.has(userGuild.id)) return false;
+                // El usuario tiene permisos para invitar bots
+                const permissions = parseInt(userGuild.permissions);
+                return (permissions & ADMINISTRATOR) || (permissions & MANAGE_GUILD);
+            })
+            .map(userGuild => ({
+                id: userGuild.id,
+                name: userGuild.name,
+                icon: userGuild.icon
+                    ? `https://cdn.discordapp.com/icons/${userGuild.id}/${userGuild.icon}.png`
+                    : '/img/default-server.png'
+            }));
+
         res.render('dashboard', {
             user: req.user,
-            guilds: mutualGuilds
+            guilds: mutualGuilds,
+            invitableGuilds: invitableGuilds
         });
     });
 

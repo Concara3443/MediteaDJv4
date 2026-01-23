@@ -41,8 +41,11 @@ class DashboardServer {
         this.app.set('view engine', 'ejs');
         this.app.set('views', path.join(__dirname, 'views'));
 
-        // Static files (nginx ya maneja el rewrite de /mediteadj/ a /)
+        // Static files - servir con y sin basePath para compatibilidad
         this.app.use(express.static(path.join(__dirname, 'public')));
+        if (basePath) {
+            this.app.use(basePath, express.static(path.join(__dirname, 'public')));
+        }
 
         // Body parser
         this.app.use(express.json());

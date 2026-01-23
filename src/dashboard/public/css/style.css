@@ -484,6 +484,57 @@ body {
     background: var(--text-muted);
 }
 
+.status-not-added {
+    background: rgba(237, 66, 69, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(237, 66, 69, 0.3);
+}
+
+.status-not-added::before {
+    background: var(--accent);
+    animation: none;
+}
+
+/* Invitable Guilds Section */
+.invitable-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(0, 243, 240, 0.1);
+}
+
+.invitable-section h2 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.invitable-section > p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.guild-card-invitable {
+    cursor: default;
+    opacity: 0.85;
+}
+
+.guild-card-invitable:hover {
+    transform: translateY(-4px) scale(1.01);
+}
+
+.guild-card-invitable .guild-icon {
+    filter: grayscale(30%);
+}
+
+.guild-card-invitable:hover .guild-icon {
+    filter: grayscale(0%);
+}
+
+.btn-invite {
+    margin-top: 1rem;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+}
+
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
