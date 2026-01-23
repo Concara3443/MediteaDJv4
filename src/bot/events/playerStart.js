@@ -41,116 +41,22 @@ module.exports = {
             console.log('   Duración:', formatTime(track.length));
             console.log('========================================');
 
+            // Añadir canción actual al historial (para evitar repeticiones en autoplay)
+            const trackTitle = cleanMetadata?.title || track.title;
+            const trackArtist = cleanMetadata?.artist || track.author;
+            addToHistory(player.guildId, trackTitle, trackArtist, track.uri);
+
+            // Guardar metadata limpia en el track para uso posterior (lyrics, etc.)
+            if (cleanMetadata && cleanMetadata.hasMetadata) {
+                track.cleanMetadata = cleanMetadata;
+            }
+
             const channel = client.channels.cache.get(player.textId);
             if (!channel) return;
 
-            // Verificar autoplay proactivo (mantener mínimo 2 canciones en cola)
-            const autoplaySettings = await client.db.models.User.getAutoplaySettings(player.guildId);
-            if (autoplaySettings.enabled && player.queue.size < 2) {
-                console.log('[Autoplay Proactivo] Cola tiene', player.queue.size, 'canciones, añadiendo una más...');
-                try {
-                    // Determinar query de búsqueda basado en metadata
-                    let searchQuery;
-                    if (cleanMetadata && cleanMetadata.hasMetadata) {
-                        // Usar metadata limpia para buscar canciones relacionadas
-                        searchQuery = `${cleanMetadata.artist} ${cleanMetadata.title}`.substring(0, 100);
-                        console.log('[Autoplay Proactivo] 🎵 Usando metadata limpia para búsqueda');
-                    } else {
-                        // Usar título original pero buscar igualmente
-                        searchQuery = `${track.author} ${track.title}`.substring(0, 100);
-                        console.log('[Autoplay Proactivo] ⚠️ Canción actual sin metadata, buscando canciones con metadata...');
-                    }
-
-                    const result = await client.kazagumo.search(searchQuery, { requester: { id: 'autoplay', username: 'Autoplay' } });
-
-                    if (result && result.tracks.length > 0) {
-                        console.log('[Autoplay Proactivo] Resultados:', result.tracks.slice(0, 5).map(t => t.title));
-
-                        // Filtrar canciones que no sean la actual Y que tengan metadata
-                        const filteredTracks = [];
-                        for (const t of result.tracks) {
-                            // Saltar si es la misma canción
-                            if (t.uri === track.uri) {
-                                console.log('[Autoplay Proactivo] ❌ Misma URI, descartando:', t.title);
-                                continue;
-                            }
-
-                            // Verificar si tiene metadata de Spotify
-                            try {
-                                const trackMetadata = await getYouTubeMetadata(t.uri, t.author, t.title);
-                                if (trackMetadata && trackMetadata.hasMetadata) {
-                                    // Verificar duplicado con canción actual (mismo título+artista)
-                                    if (cleanMetadata &&
-                                        trackMetadata.title.toLowerCase().trim() === cleanMetadata.title.toLowerCase().trim() &&
-                                        trackMetadata.artist.toLowerCase().trim() === cleanMetadata.artist.toLowerCase().trim()) {
-                                        console.log('[Autoplay Proactivo] ❌ Duplicado (mismo título+artista):', trackMetadata.title);
-                                        continue;
-                                    }
-
-                                    // Verificar duplicado con canciones ya añadidas
-                                    const isDuplicate = filteredTracks.some(ft =>
-                                        ft.metadata.title.toLowerCase().trim() === trackMetadata.title.toLowerCase().trim() &&
-                                        ft.metadata.artist.toLowerCase().trim() === trackMetadata.artist.toLowerCase().trim()
-                                    );
-
-                                    if (isDuplicate) {
-                                        console.log('[Autoplay Proactivo] ❌ Duplicado en cola:', trackMetadata.title);
-                                        continue;
-                                    }
-
-                                    // Guardar track con su metadata
-                                    filteredTracks.push({ track: t, metadata: trackMetadata });
-                                    console.log('[Autoplay Proactivo] ✅ Con metadata:', trackMetadata.title);
-                                } else {
-                                    console.log('[Autoplay Proactivo] ❌ Sin metadata, descartando:', t.title);
-                                }
-                            } catch (error) {
-                                console.log('[Autoplay Proactivo] ❌ Error verificando metadata:', t.title);
-                            }
-
-                            // Limitar a 5 verificaciones para no hacer demasiadas llamadas
-                            if (filteredTracks.length >= 5) break;
-                        }
-
-                        if (filteredTracks.length === 0) {
-                            console.log('[Autoplay Proactivo] ❌ No se encontraron canciones con metadata');
-                            return;
-                        }
-
-                        const randomIndex = Math.floor(Math.random() * filteredTracks.length);
-                        const randomItem = filteredTracks[randomIndex];
-                        const randomTrack = randomItem.track;
-
-                        player.queue.add(randomTrack);
-                        console.log('[Autoplay Proactivo] Añadida:', randomItem.metadata.title, 'por', randomItem.metadata.artist);
-
-                        // Notificar al dashboard
-                        if (client.io) {
-                            const playerData = {
-                                connected: true,
-                                playing: player.playing,
-                                paused: player.paused,
-                                current: player.queue.current ? {
-                                    title: player.queue.current.title,
-                                    author: player.queue.current.author,
-                                    duration: player.queue.current.length,
-                                    thumbnail: player.queue.current.thumbnail
-                                } : null,
-                                queue: player.queue.map(track => ({
-                                    title: track.title,
-                                    author: track.author,
-                                    duration: track.length
-                                })),
-                                position: player.position || 0,
-                                volume: player.volume
-                            };
-                            client.io.to(`guild-${player.guildId}`).emit('player-update', playerData);
-                        }
-                    }
-                } catch (error) {
-                    console.error('[Autoplay Proactivo] Error:', error);
-                }
-            }
+            // NOTA: El autoplay proactivo fue eliminado para evitar que las canciones
+            // del autoplay se añadan antes de las canciones del usuario.
+            // El autoplay ahora SOLO se ejecuta en playerEnd cuando la cola está vacía.
 
             // Crear embed con información de la canción
             const embed = createNowPlayingEmbed(track, player);
@@ -307,7 +213,7 @@ module.exports = {
                             if (result && result.tracks.length > 0) {
                                 console.log('[Autoplay] Resultados de búsqueda:', result.tracks.slice(0, 10).map(t => t.title));
 
-                                // Filtrar canciones con metadata
+                                // Filtrar canciones con metadata y que no estén en el historial
                                 const filteredTracks = [];
                                 for (const t of result.tracks) {
                                     if (t.uri === track.uri) {
@@ -315,10 +221,25 @@ module.exports = {
                                         continue;
                                     }
 
-                                    // Verificar metadata de Spotify
+                                    // Verificar metadata (Spotify primero, luego MusicBrainz)
                                     try {
-                                        const candidateMetadata = await getYouTubeMetadata(t.uri, t.author, t.title);
+                                        let candidateMetadata = await getYouTubeMetadata(t.uri, t.author, t.title);
+
+                                        // Si Spotify no encontró, intentar MusicBrainz
+                                        if (!candidateMetadata || !candidateMetadata.hasMetadata) {
+                                            const mbMetadata = await getMetadata(t.author, t.title, searchSpotifyTrack);
+                                            if (mbMetadata && mbMetadata.hasMetadata) {
+                                                candidateMetadata = mbMetadata;
+                                            }
+                                        }
+
                                         if (candidateMetadata && candidateMetadata.hasMetadata) {
+                                            // Verificar si ya está en el historial (evitar repeticiones)
+                                            if (isInHistory(player.guildId, candidateMetadata.title, candidateMetadata.artist, t.uri)) {
+                                                console.log('[Autoplay] ❌ Ya en historial:', candidateMetadata.title);
+                                                continue;
+                                            }
+
                                             // Verificar duplicado con canción que terminó (mismo título+artista)
                                             if (trackMetadata &&
                                                 candidateMetadata.title.toLowerCase().trim() === trackMetadata.title.toLowerCase().trim() &&
@@ -327,7 +248,7 @@ module.exports = {
                                                 continue;
                                             }
 
-                                            // Verificar duplicado con canciones ya añadidas
+                                            // Verificar duplicado con canciones ya añadidas en esta búsqueda
                                             const isDuplicate = filteredTracks.some(ft =>
                                                 ft.metadata.title.toLowerCase().trim() === candidateMetadata.title.toLowerCase().trim() &&
                                                 ft.metadata.artist.toLowerCase().trim() === candidateMetadata.artist.toLowerCase().trim()
@@ -340,7 +261,7 @@ module.exports = {
 
                                             // Guardar track con su metadata
                                             filteredTracks.push({ track: t, metadata: candidateMetadata });
-                                            console.log('[Autoplay] ✅ Con metadata:', candidateMetadata.title);
+                                            console.log('[Autoplay] ✅ Con metadata:', candidateMetadata.title, `(${candidateMetadata.source})`);
                                         } else {
                                             console.log('[Autoplay] ❌ Sin metadata, descartando:', t.title);
                                         }
