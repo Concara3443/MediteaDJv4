@@ -299,32 +299,26 @@ module.exports = (client, io, db) => {
                 trackUri = player.queue.current.uri;
             }
 
-            // SOLO funcionar si la canción tiene metadata de Spotify
+            // Intentar obtener metadata limpia para mejor búsqueda de lyrics
+            // Ya no bloqueamos si no hay metadata - lyricsSync intentará múltiples fuentes
             if (trackUri && trackUri.includes('youtube.com')) {
                 const { getYouTubeMetadata } = require('../../bot/utils/youtubeMetadata');
 
                 try {
                     const metadata = await getYouTubeMetadata(trackUri, artist, title);
 
-                    if (!metadata || !metadata.hasMetadata) {
-                        console.log('[API Lyrics] ❌ Canción sin metadata de Spotify');
-                        return res.json({
-                            error: 'Esta canción no tiene metadata de Spotify. Las letras solo están disponibles para canciones con metadata limpia.',
-                            lyrics: null
-                        });
+                    if (metadata && metadata.hasMetadata) {
+                        console.log(`[API Lyrics] ✅ Metadata (${metadata.source}):`, metadata.title);
+                    } else {
+                        console.log('[API Lyrics] ⚠️ Sin metadata perfecta, lyricsSync intentará alternativas');
                     }
-
-                    console.log('[API Lyrics] ✅ Metadata verificada:', metadata.title);
                 } catch (error) {
                     console.error('[API Lyrics] Error verificando metadata:', error.message);
-                    return res.json({
-                        error: 'No se pudo verificar la metadata de la canción',
-                        lyrics: null
-                    });
+                    // Continuamos de todos modos - lyricsSync manejará el fallback
                 }
             }
 
-            // Use lyrics sync utility
+            // Use lyrics sync utility (ahora con soporte MusicBrainz)
             const lyricsSync = require('../../bot/utils/lyricsSync');
             const result = await lyricsSync.fetchLyrics(title, artist, trackUri);
 
