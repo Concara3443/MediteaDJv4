@@ -1,6 +1,9 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { COLORS } = require('../../config/constants');
 const { getYouTubeMetadata } = require('../utils/youtubeMetadata');
+const { searchMusicBrainz, getMetadata } = require('../utils/musicbrainz');
+const { searchSpotifyTrack } = require('../utils/spotifyMetadata');
+const { addToHistory, isInHistory } = require('../utils/autoplayHistory');
 
 // Map para almacenar los mensajes de "now playing" por guild
 const nowPlayingMessages = new Map();

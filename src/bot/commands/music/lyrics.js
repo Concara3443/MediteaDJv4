@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const { Client } = require('genius-lyrics');
 const { COLORS } = require('../../../config/constants');
 const { getYouTubeMetadata } = require('../../utils/youtubeMetadata');
+const { searchMusicBrainz } = require('../../utils/musicbrainz');
 
 // Inicializar cliente de Genius con Access Token
 const genius = new Client(process.env.GENIUS_ACCESS_TOKEN);
@@ -42,25 +43,42 @@ module.exports = {
                 // LOG: Información de la canción actual
                 console.log('[Lyrics] ========== BÚSQUEDA DE LETRA ==========');
 
-                // Obtener metadata limpia de Spotify
-                const metadata = await getYouTubeMetadata(currentTrack.uri, currentTrack.author, currentTrack.title);
+                // Obtener metadata limpia (Spotify + MusicBrainz)
+                let metadata = await getYouTubeMetadata(currentTrack.uri, currentTrack.author, currentTrack.title);
 
-                // SOLO funcionar si la canción tiene metadata de YouTube Music
+                // Si no encontró con el método normal, intentar MusicBrainz directamente
                 if (!metadata || !metadata.hasMetadata) {
-                    console.log('[Lyrics] ❌ Canción sin metadata de YouTube Music');
-                    return interaction.editReply({
-                        embeds: [new EmbedBuilder()
-                            .setColor(COLORS.ERROR)
-                            .setTitle('❌ Metadata no disponible')
-                            .setDescription('Esta canción no tiene metadata de YouTube Music.\n\n**El comando `/lyrics` sin argumentos solo funciona con canciones de YouTube Music.**\n\nPuedes:\n• Usar `/lyrics <nombre de la canción>` para buscar manualmente\n• Reproducir una canción de YouTube Music con metadata limpia')
-                        ]
-                    });
+                    console.log('[Lyrics] Intentando MusicBrainz directamente...');
+                    const mbMetadata = await searchMusicBrainz(currentTrack.author, currentTrack.title);
+                    if (mbMetadata) {
+                        metadata = {
+                            title: mbMetadata.title,
+                            artist: mbMetadata.artist,
+                            hasMetadata: true,
+                            source: 'musicbrainz'
+                        };
+                    }
                 }
 
-                // Usar metadata de YouTube Music (LIMPIA)
+                // Si aún no hay metadata, usar el título y autor originales (limpios)
+                if (!metadata || !metadata.hasMetadata) {
+                    console.log('[Lyrics] ⚠️ Sin metadata, usando título/autor originales limpiados');
+                    // Limpiar título y autor para búsqueda
+                    const cleanedTitle = cleanSearchQuery(currentTrack.title);
+                    const cleanedArtist = currentTrack.author.replace(/\s*-\s*topic$/i, '').trim();
+
+                    metadata = {
+                        title: cleanedTitle,
+                        artist: cleanedArtist,
+                        hasMetadata: false,
+                        source: 'original-cleaned'
+                    };
+                }
+
+                // Usar metadata obtenida
                 const searchArtist = metadata.artist;
                 const searchTitle = metadata.title;
-                console.log('[Lyrics] ✅ Metadata de YouTube Music:', { searchArtist, searchTitle });
+                console.log(`[Lyrics] ✅ Usando metadata (${metadata.source}):`, { searchArtist, searchTitle });
 
                 searchQuery = `${searchArtist} ${searchTitle}`;
                 trackTitle = currentTrack.title; // Para el embed

@@ -1,9 +1,11 @@
 const { Client } = require('genius-lyrics');
 const { getYouTubeMetadata } = require('./youtubeMetadata');
+const { searchMusicBrainz } = require('./musicbrainz');
 
 /**
  * Lyrics Synchronization Utility
  * Fetches and caches lyrics from Genius API
+ * Uses MusicBrainz as fallback for metadata
  */
 class LyricsSync {
     constructor() {
@@ -44,18 +46,34 @@ class LyricsSync {
         }
 
         try {
-            // Get clean metadata from YouTube if URI is provided
+            // Get clean metadata using multiple sources
             let searchArtist = artist;
             let searchTitle = title;
 
             if (uri) {
-                const metadata = await getYouTubeMetadata(uri);
-                if (metadata) {
+                // Intentar obtener metadata limpia (Spotify + MusicBrainz)
+                const metadata = await getYouTubeMetadata(uri, artist, title);
+                if (metadata && metadata.hasMetadata) {
                     searchArtist = metadata.artist;
                     searchTitle = metadata.title;
-                    console.log('[LyricsSync] ✅ Metadata de YouTube:', { searchArtist, searchTitle });
+                    console.log(`[LyricsSync] ✅ Metadata (${metadata.source}):`, { searchArtist, searchTitle });
                 } else {
-                    console.log('[LyricsSync] ⚠️ Usando fallback (parámetros originales)');
+                    // Intentar MusicBrainz directamente como último recurso
+                    console.log('[LyricsSync] Intentando MusicBrainz directamente...');
+                    const mbMetadata = await searchMusicBrainz(artist, title);
+                    if (mbMetadata) {
+                        searchArtist = mbMetadata.artist;
+                        searchTitle = mbMetadata.title;
+                        console.log('[LyricsSync] ✅ Metadata (musicbrainz):', { searchArtist, searchTitle });
+                    } else {
+                        // Limpiar título y artista como fallback
+                        searchArtist = artist.replace(/\s*-\s*topic$/i, '').trim();
+                        searchTitle = title
+                            .replace(/\s*[\[(].*?[\])]/g, '')
+                            .replace(/\b(official|video|audio|lyric|lyrics|hd|hq|4k)\b/gi, '')
+                            .trim();
+                        console.log('[LyricsSync] ⚠️ Sin metadata, usando títulos limpiados:', { searchArtist, searchTitle });
+                    }
                 }
             }
 

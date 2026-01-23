@@ -1,7 +1,8 @@
 const { searchSpotifyTrack } = require('./spotifyMetadata');
+const { searchMusicBrainz } = require('./musicbrainz');
 
 /**
- * Obtiene título y artista limpios usando SOLO Spotify (más rápido)
+ * Obtiene título y artista limpios usando Spotify y MusicBrainz como fallback
  * @param {string} uri - URL del video de YouTube
  * @param {string} artist - Nombre del artista (del canal de YouTube)
  * @param {string} title - Título del video
@@ -21,7 +22,7 @@ async function getYouTubeMetadata(uri, artist = null, title = null) {
         let searchTitle = title;
         let originalTitle = title;
 
-        // Buscar en Spotify DIRECTAMENTE (sin llamar a ytdl)
+        // 1. Intentar Spotify primero (más rápido)
         try {
             const spotifyMetadata = await searchSpotifyTrack(searchArtist, searchTitle);
 
@@ -29,6 +30,7 @@ async function getYouTubeMetadata(uri, artist = null, title = null) {
                 return {
                     title: spotifyMetadata.title,
                     artist: spotifyMetadata.artist,
+                    album: spotifyMetadata.album,
                     videoId: videoId,
                     originalTitle: originalTitle,
                     hasMetadata: true,
@@ -39,8 +41,28 @@ async function getYouTubeMetadata(uri, artist = null, title = null) {
             console.error('[Metadata] Error en Spotify:', spotifyError.message);
         }
 
-        // Si Spotify falla, no tiene metadata
-        console.log('[Metadata] ❌ No se encontró en Spotify');
+        // 2. Fallback a MusicBrainz si Spotify no encontró
+        try {
+            console.log('[Metadata] Spotify no encontró, intentando MusicBrainz...');
+            const mbMetadata = await searchMusicBrainz(searchArtist, searchTitle);
+
+            if (mbMetadata) {
+                return {
+                    title: mbMetadata.title,
+                    artist: mbMetadata.artist,
+                    album: mbMetadata.album,
+                    videoId: videoId,
+                    originalTitle: originalTitle,
+                    hasMetadata: true,
+                    source: 'musicbrainz'
+                };
+            }
+        } catch (mbError) {
+            console.error('[Metadata] Error en MusicBrainz:', mbError.message);
+        }
+
+        // Si ninguno encontró metadata
+        console.log('[Metadata] ❌ No se encontró en Spotify ni MusicBrainz');
         return null;
 
     } catch (error) {
