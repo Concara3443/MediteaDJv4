@@ -43,42 +43,86 @@ module.exports = {
                 // LOG: Información de la canción actual
                 console.log('[Lyrics] ========== BÚSQUEDA DE LETRA ==========');
 
-                // Obtener metadata limpia (Spotify + MusicBrainz)
-                let metadata = await getYouTubeMetadata(currentTrack.uri, currentTrack.author, currentTrack.title);
+                // Datos crudos de YouTube
+                const rawTitle = currentTrack.title;
+                const rawArtist = currentTrack.author.replace(/\s*-\s*topic$/i, '').replace(/vevo$/i, '').trim();
 
-                // Si no encontró con el método normal, intentar MusicBrainz directamente
-                if (!metadata || !metadata.hasMetadata) {
-                    console.log('[Lyrics] Intentando MusicBrainz directamente...');
-                    const mbMetadata = await searchMusicBrainz(currentTrack.author, currentTrack.title);
-                    if (mbMetadata) {
+                console.log('[Lyrics] Datos de YouTube:', { rawTitle, rawArtist });
+
+                // 1. PRIMERO intentar MusicBrainz con el título COMPLETO (sin procesar)
+                // MusicBrainz es inteligente y puede encontrar la canción
+                let metadata = null;
+                console.log('[Lyrics] Buscando en MusicBrainz con título completo...');
+                let mbMetadata = await searchMusicBrainz(rawArtist, rawTitle);
+
+                if (mbMetadata && mbMetadata.score >= 70) {
+                    metadata = {
+                        title: mbMetadata.title,
+                        artist: mbMetadata.artist,
+                        hasMetadata: true,
+                        source: 'musicbrainz',
+                        score: mbMetadata.score
+                    };
+                    console.log(`[Lyrics] ✅ MusicBrainz encontró (score ${mbMetadata.score}):`, metadata.title, '-', metadata.artist);
+                }
+
+                // 2. Si no encontró, intentar Spotify con título completo
+                if (!metadata) {
+                    console.log('[Lyrics] MusicBrainz no encontró, intentando Spotify...');
+                    const ytMetadata = await getYouTubeMetadata(currentTrack.uri, rawArtist, rawTitle);
+                    if (ytMetadata && ytMetadata.hasMetadata) {
+                        metadata = ytMetadata;
+                        console.log(`[Lyrics] ✅ Spotify encontró:`, metadata.title, '-', metadata.artist);
+                    }
+                }
+
+                // 3. Si aún no encontró, limpiar título y reintentar MusicBrainz
+                if (!metadata) {
+                    // Limpieza básica del título
+                    const cleanedTitle = rawTitle
+                        .replace(/\s*[\[\(].*?[\]\)]/g, '') // Remover [Visualizer], (Official), etc.
+                        .replace(/\s*[|].*$/g, '') // Remover todo después de |
+                        .replace(/\b(official|video|audio|lyric|lyrics|visualizer|hd|hq|4k)\b/gi, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+
+                    console.log('[Lyrics] Reintentando MusicBrainz con título limpio:', cleanedTitle);
+                    mbMetadata = await searchMusicBrainz(rawArtist, cleanedTitle);
+
+                    if (mbMetadata && mbMetadata.score >= 60) {
                         metadata = {
                             title: mbMetadata.title,
                             artist: mbMetadata.artist,
                             hasMetadata: true,
-                            source: 'musicbrainz'
+                            source: 'musicbrainz-cleaned',
+                            score: mbMetadata.score
                         };
+                        console.log(`[Lyrics] ✅ MusicBrainz encontró con título limpio (score ${mbMetadata.score}):`, metadata.title);
                     }
                 }
 
-                // Si aún no hay metadata, usar el título y autor originales (limpios)
-                if (!metadata || !metadata.hasMetadata) {
-                    console.log('[Lyrics] ⚠️ Sin metadata, usando título/autor originales limpiados');
-                    // Limpiar título y autor para búsqueda
-                    const cleanedTitle = cleanSearchQuery(currentTrack.title);
-                    const cleanedArtist = currentTrack.author.replace(/\s*-\s*topic$/i, '').trim();
+                // 4. Último recurso: usar título limpio
+                if (!metadata) {
+                    const cleanedTitle = rawTitle
+                        .replace(/\s*[\[\(].*?[\]\)]/g, '')
+                        .replace(/\s*[|].*$/g, '')
+                        .replace(/^.+?\s*[-–—]\s*/, '') // Remover "ARTISTA - " del inicio
+                        .replace(/\s+/g, ' ')
+                        .trim();
 
+                    console.log('[Lyrics] ⚠️ Sin metadata, usando título limpio:', cleanedTitle);
                     metadata = {
-                        title: cleanedTitle,
-                        artist: cleanedArtist,
+                        title: cleanedTitle || rawTitle,
+                        artist: rawArtist,
                         hasMetadata: false,
-                        source: 'original-cleaned'
+                        source: 'fallback'
                     };
                 }
 
                 // Usar metadata obtenida
                 const searchArtist = metadata.artist;
                 const searchTitle = metadata.title;
-                console.log(`[Lyrics] ✅ Usando metadata (${metadata.source}):`, { searchArtist, searchTitle });
+                console.log(`[Lyrics] ✅ Usando para Genius (${metadata.source}):`, { searchArtist, searchTitle });
 
                 searchQuery = `${searchArtist} ${searchTitle}`;
                 trackTitle = currentTrack.title; // Para el embed
@@ -158,8 +202,46 @@ module.exports = {
                 });
             }
 
-            // Obtener la primera canción válida
-            const song = filteredResults[0];
+            // Calcular score de similitud para cada resultado y ordenar
+            const searchWords = searchQuery.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+            const scoredResults = filteredResults.map(song => {
+                const songTitle = song.title.toLowerCase();
+                const songArtist = song.artist.name.toLowerCase();
+                const combined = `${songTitle} ${songArtist}`;
+
+                let score = 0;
+
+                // Bonus si el título contiene palabras clave de la búsqueda
+                for (const word of searchWords) {
+                    if (songTitle.includes(word)) score += 10;
+                    if (songArtist.includes(word)) score += 5;
+                }
+
+                // Bonus grande si el título coincide exactamente con alguna palabra clave
+                for (const word of searchWords) {
+                    if (songTitle === word || songTitle.startsWith(word + ' ') || songTitle.endsWith(' ' + word)) {
+                        score += 50;
+                    }
+                }
+
+                // Penalización si el título es muy diferente
+                const titleWords = songTitle.split(/\s+/);
+                const matchingWords = titleWords.filter(w => searchWords.some(sw => w.includes(sw) || sw.includes(w)));
+                if (matchingWords.length === 0) score -= 20;
+
+                return { song, score };
+            });
+
+            // Ordenar por score descendente
+            scoredResults.sort((a, b) => b.score - a.score);
+
+            console.log('[Lyrics] Resultados con score:');
+            scoredResults.slice(0, 3).forEach((r, i) => {
+                console.log(`[Lyrics]   ${i + 1}. "${r.song.title}" - ${r.song.artist.name} (score: ${r.score})`);
+            });
+
+            // Obtener la canción con mejor score
+            const song = scoredResults[0].song;
             console.log('[Lyrics] ✅ Canción seleccionada:', `"${song.title}" - ${song.artist.name}`);
             console.log('[Lyrics] ==========================================');
 

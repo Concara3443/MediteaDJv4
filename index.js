@@ -17,6 +17,9 @@ console.log(`
 console.log('[Main] Inicializando base de datos...');
 const dbManager = new DatabaseManager(process.env.DATABASE_PATH || './data/database.db');
 
+// Variable global para el bot (accesible en handlers de señales)
+let bot = null;
+
 (async () => {
     const db = await dbManager.initialize();
 
@@ -26,7 +29,7 @@ const dbManager = new DatabaseManager(process.env.DATABASE_PATH || './data/datab
 
     // Iniciar el bot de Discord
     console.log('[Main] Iniciando bot de Discord...');
-    const bot = require('./src/bot');
+    bot = require('./src/bot');
 
     // Iniciar el dashboard (solo si no estamos en modo bot-only)
     if (process.env.ENABLE_DASHBOARD !== 'false') {

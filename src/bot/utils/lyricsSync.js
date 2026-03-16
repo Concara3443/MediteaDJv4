@@ -46,33 +46,52 @@ class LyricsSync {
         }
 
         try {
-            // Get clean metadata using multiple sources
-            let searchArtist = artist;
-            let searchTitle = title;
+            // Datos crudos
+            const rawArtist = artist.replace(/\s*-\s*topic$/i, '').replace(/vevo$/i, '').trim();
+            const rawTitle = title;
+            let searchArtist = rawArtist;
+            let searchTitle = rawTitle;
 
-            if (uri) {
-                // Intentar obtener metadata limpia (Spotify + MusicBrainz)
-                const metadata = await getYouTubeMetadata(uri, artist, title);
+            console.log('[LyricsSync] Datos originales:', { rawArtist, rawTitle });
+
+            // 1. PRIMERO intentar MusicBrainz con título COMPLETO
+            console.log('[LyricsSync] Buscando en MusicBrainz con título completo...');
+            let mbMetadata = await searchMusicBrainz(rawArtist, rawTitle);
+
+            if (mbMetadata && mbMetadata.score >= 70) {
+                searchArtist = mbMetadata.artist;
+                searchTitle = mbMetadata.title;
+                console.log(`[LyricsSync] ✅ MusicBrainz encontró (score ${mbMetadata.score}):`, { searchArtist, searchTitle });
+            } else if (uri) {
+                // 2. Intentar Spotify
+                console.log('[LyricsSync] MusicBrainz no encontró, intentando Spotify...');
+                const metadata = await getYouTubeMetadata(uri, rawArtist, rawTitle);
                 if (metadata && metadata.hasMetadata) {
                     searchArtist = metadata.artist;
                     searchTitle = metadata.title;
-                    console.log(`[LyricsSync] ✅ Metadata (${metadata.source}):`, { searchArtist, searchTitle });
+                    console.log(`[LyricsSync] ✅ Spotify encontró:`, { searchArtist, searchTitle });
                 } else {
-                    // Intentar MusicBrainz directamente como último recurso
-                    console.log('[LyricsSync] Intentando MusicBrainz directamente...');
-                    const mbMetadata = await searchMusicBrainz(artist, title);
-                    if (mbMetadata) {
+                    // 3. Reintentar MusicBrainz con título limpio
+                    const cleanedTitle = rawTitle
+                        .replace(/\s*[\[\(].*?[\]\)]/g, '')
+                        .replace(/\s*[|].*$/g, '')
+                        .replace(/\b(official|video|audio|lyric|lyrics|visualizer|hd|hq|4k)\b/gi, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+
+                    console.log('[LyricsSync] Reintentando MusicBrainz con título limpio:', cleanedTitle);
+                    mbMetadata = await searchMusicBrainz(rawArtist, cleanedTitle);
+
+                    if (mbMetadata && mbMetadata.score >= 60) {
                         searchArtist = mbMetadata.artist;
                         searchTitle = mbMetadata.title;
-                        console.log('[LyricsSync] ✅ Metadata (musicbrainz):', { searchArtist, searchTitle });
+                        console.log(`[LyricsSync] ✅ MusicBrainz encontró (score ${mbMetadata.score}):`, { searchArtist, searchTitle });
                     } else {
-                        // Limpiar título y artista como fallback
-                        searchArtist = artist.replace(/\s*-\s*topic$/i, '').trim();
-                        searchTitle = title
-                            .replace(/\s*[\[(].*?[\])]/g, '')
-                            .replace(/\b(official|video|audio|lyric|lyrics|hd|hq|4k)\b/gi, '')
-                            .trim();
-                        console.log('[LyricsSync] ⚠️ Sin metadata, usando títulos limpiados:', { searchArtist, searchTitle });
+                        // 4. Último recurso: limpiar título manualmente
+                        searchTitle = cleanedTitle
+                            .replace(/^.+?\s*[-–—]\s*/, '') // Remover "ARTISTA - " del inicio
+                            .trim() || rawTitle;
+                        console.log('[LyricsSync] ⚠️ Sin metadata, usando título limpio:', { searchArtist, searchTitle });
                     }
                 }
             }
@@ -133,8 +152,41 @@ class LyricsSync {
             // Si no quedan resultados después del filtro, usar los originales
             const resultsToUse = filteredResults.length > 0 ? filteredResults : searches;
 
-            // Get the first result (most relevant)
-            const song = resultsToUse[0];
+            // Calcular score de similitud para cada resultado
+            const searchWords = searchQuery.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+            const scoredResults = resultsToUse.map(song => {
+                const songTitle = song.title.toLowerCase();
+                const songArtist = song.artist.name.toLowerCase();
+
+                let score = 0;
+
+                // Bonus si el título contiene palabras clave de la búsqueda
+                for (const word of searchWords) {
+                    if (songTitle.includes(word)) score += 10;
+                    if (songArtist.includes(word)) score += 5;
+                }
+
+                // Bonus grande si el título coincide exactamente con alguna palabra clave
+                for (const word of searchWords) {
+                    if (songTitle === word || songTitle.startsWith(word + ' ') || songTitle.endsWith(' ' + word)) {
+                        score += 50;
+                    }
+                }
+
+                // Penalización si el título es muy diferente
+                const titleWords = songTitle.split(/\s+/);
+                const matchingWords = titleWords.filter(w => searchWords.some(sw => w.includes(sw) || sw.includes(w)));
+                if (matchingWords.length === 0) score -= 20;
+
+                return { song, score };
+            });
+
+            // Ordenar por score descendente
+            scoredResults.sort((a, b) => b.score - a.score);
+
+            // Get the best matching result
+            const song = scoredResults[0].song;
+            console.log('[LyricsSync] Mejor resultado:', `"${song.title}" - ${song.artist.name} (score: ${scoredResults[0].score})`);
 
             // Fetch full lyrics
             const lyrics = await song.lyrics();

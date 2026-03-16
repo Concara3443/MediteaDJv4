@@ -273,6 +273,13 @@ module.exports = {
                                 }
 
                                 if (filteredTracks.length > 0) {
+                                    // Verificar que el player sigue existiendo antes de agregar a la cola
+                                    const activePlayer = client.kazagumo.players.get(player.guildId);
+                                    if (!activePlayer) {
+                                        console.log('[Autoplay] ❌ Player ya no existe, cancelando');
+                                        return;
+                                    }
+
                                     const randomIndex = Math.floor(Math.random() * filteredTracks.length);
                                     const randomItem = filteredTracks[randomIndex];
                                     const randomTrack = randomItem.track;
@@ -280,34 +287,35 @@ module.exports = {
                                     console.log('[Autoplay] Canción elegida:', randomItem.metadata.title, 'por', randomItem.metadata.artist);
 
                                     // Agregar a la cola y reproducir
-                                    currentPlayer.queue.add(randomTrack);
+                                    activePlayer.queue.add(randomTrack);
 
                                     // Emitir evento Socket.IO al dashboard INMEDIATAMENTE
                                     if (client.io) {
                                         const playerData = {
                                             connected: true,
-                                            playing: currentPlayer.playing,
-                                            paused: currentPlayer.paused,
-                                            current: currentPlayer.queue.current ? {
-                                                title: currentPlayer.queue.current.title,
-                                                author: currentPlayer.queue.current.author,
-                                                duration: currentPlayer.queue.current.length,
-                                                thumbnail: currentPlayer.queue.current.thumbnail
+                                            playing: activePlayer.playing,
+                                            paused: activePlayer.paused,
+                                            current: activePlayer.queue.current ? {
+                                                title: activePlayer.queue.current.title,
+                                                author: activePlayer.queue.current.author,
+                                                duration: activePlayer.queue.current.length,
+                                                thumbnail: activePlayer.queue.current.thumbnail
                                             } : null,
-                                            queue: currentPlayer.queue.map(track => ({
+                                            queue: activePlayer.queue.map(track => ({
                                                 title: track.title,
                                                 author: track.author,
                                                 duration: track.length
                                             })),
-                                            position: currentPlayer.position || 0,
-                                            volume: currentPlayer.volume
+                                            position: activePlayer.position || 0,
+                                            volume: activePlayer.volume
                                         };
 
-                                        client.io.to(`guild-${currentPlayer.guildId}`).emit('player-update', playerData);
+                                        client.io.to(`guild-${activePlayer.guildId}`).emit('player-update', playerData);
                                     }
 
-                                    if (!currentPlayer.playing && !currentPlayer.paused) {
-                                        await currentPlayer.play();
+                                    // Reproducir si no está reproduciendo
+                                    if (!activePlayer.playing && !activePlayer.paused) {
+                                        await activePlayer.play();
                                     }
 
                                     if (channel) {
