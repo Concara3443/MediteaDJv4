@@ -1,8 +1,17 @@
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const MusicEmbeds = require('../utils/embeds');
+const { LIMITS } = require('../../config/constants');
+
 module.exports = {
     name: 'interactionCreate',
     async execute(interaction, client) {
         // Solo procesar interacciones de botones
         if (!interaction.isButton()) return;
+
+        // Manejar botones de paginación del queue
+        if (interaction.customId.startsWith('queue_')) {
+            return handleQueueButtons(interaction, client);
+        }
 
         // Solo procesar botones de música
         if (!interaction.customId.startsWith('music_')) return;
@@ -100,3 +109,62 @@ module.exports = {
         }
     }
 };
+
+async function handleQueueButtons(interaction, client) {
+    const player = client.kazagumo.players.get(interaction.guild.id);
+
+    if (!player || !player.queue.current) {
+        return interaction.reply({
+            content: '❌ No hay ninguna canción reproduciéndose.',
+            ephemeral: true
+        });
+    }
+
+    const customId = interaction.customId;
+    const currentPage = parseInt(customId.split('_')[2]) || 1;
+    const totalPages = Math.ceil(player.queue.size / LIMITS.QUEUE_PAGE_SIZE) || 1;
+
+    let newPage = currentPage;
+
+    if (customId.startsWith('queue_prev_')) {
+        newPage = Math.max(1, currentPage - 1);
+    } else if (customId.startsWith('queue_next_')) {
+        newPage = Math.min(totalPages, currentPage + 1);
+    } else {
+        return;
+    }
+
+    // Recalcular totalPages por si la cola cambió
+    const updatedTotalPages = Math.ceil(player.queue.size / LIMITS.QUEUE_PAGE_SIZE) || 1;
+    newPage = Math.min(newPage, updatedTotalPages);
+
+    const queueEmbed = MusicEmbeds.queue(player, newPage, LIMITS.QUEUE_PAGE_SIZE);
+
+    const row = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId(`queue_prev_${newPage}`)
+                .setLabel('◀ Anterior')
+                .setStyle(ButtonStyle.Primary)
+                .setDisabled(newPage === 1),
+            new ButtonBuilder()
+                .setCustomId(`queue_page_${newPage}`)
+                .setLabel(`Página ${newPage}/${updatedTotalPages}`)
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(true),
+            new ButtonBuilder()
+                .setCustomId(`queue_next_${newPage}`)
+                .setLabel('Siguiente ▶')
+                .setStyle(ButtonStyle.Primary)
+                .setDisabled(newPage === updatedTotalPages)
+        );
+
+    try {
+        await interaction.update({
+            embeds: [queueEmbed],
+            components: updatedTotalPages > 1 ? [row] : []
+        });
+    } catch (error) {
+        console.error('[QueueButtons] Error:', error);
+    }
+}
