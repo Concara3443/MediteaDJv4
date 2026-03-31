@@ -41,7 +41,7 @@ module.exports = {
                 // Añadir en orden inverso para mantener el orden de la playlist
                 for (let i = result.tracks.length - 1; i >= 0; i--) {
                     result.tracks[i].originalQuery = query;
-                    player.queue.add(result.tracks[i], 0);
+                    player.queue.unshift(result.tracks[i]);
                 }
 
                 return interaction.editReply({
@@ -84,7 +84,7 @@ module.exports = {
             }
 
             // Añadir en posición 0 (después de la canción actual)
-            player.queue.add(track, 0);
+            player.queue.unshift(track);
 
             return interaction.editReply({
                 embeds: [MusicEmbeds.success(
