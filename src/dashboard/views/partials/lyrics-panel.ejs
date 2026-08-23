@@ -1,0 +1,48 @@
+<div class="lyrics-panel" id="lyrics-panel">
+    <div class="lyrics-panel-header">
+        <h3>🎤 Letras</h3>
+        <div class="lyrics-controls">
+            <button id="lyrics-fullscreen-btn" class="btn-lyrics-control" title="Pantalla completa">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                </svg>
+            </button>
+            <button id="lyrics-close-btn" class="btn-lyrics-control" title="Cerrar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Lyrics Content -->
+    <div id="lyrics-content" class="lyrics-content">
+        <div id="lyrics-loading" class="lyrics-loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Cargando letras...</p>
+        </div>
+
+        <div id="lyrics-text" class="lyrics-text" style="display: none;">
+            <!-- Lyrics will be populated by JavaScript -->
+        </div>
+
+        <div id="lyrics-empty" class="lyrics-empty">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.5">
+                <path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/>
+            </svg>
+            <p>No hay canción reproduciéndose</p>
+            <p class="lyrics-hint">Las letras aparecerán automáticamente cuando reproduzcas una canción</p>
+        </div>
+
+        <div id="lyrics-error" class="lyrics-error" style="display: none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.5">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <p>No se encontraron letras para esta canción</p>
+        </div>
+    </div>
+
+    <div class="lyrics-footer">
+        <p>Powered by <a href="https://genius.com" target="_blank" rel="noopener noreferrer">Genius</a></p>
+    </div>
+</div>

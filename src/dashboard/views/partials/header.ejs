@@ -1,0 +1,23 @@
+<header class="navbar">
+    <div class="container">
+        <div class="logo">
+            <a href="<%= basePath %>/">
+                <img src="<%= basePath %>/logo.png" alt="Meditea DJ" class="logo-img">
+                <h1>Meditea DJ</h1>
+            </a>
+        </div>
+        <nav class="nav-links">
+            <a href="<%= basePath %>/">Inicio</a>
+            <% if (user) { %>
+                <a href="<%= basePath %>/dashboard">Dashboard</a>
+                <div class="user-menu">
+                    <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="Avatar" class="user-avatar">
+                    <span><%= user.username %></span>
+                    <a href="<%= basePath %>/auth/logout" class="btn btn-secondary">Cerrar Sesión</a>
+                </div>
+            <% } else { %>
+                <a href="<%= basePath %>/auth/login" class="btn btn-primary">Iniciar Sesión</a>
+            <% } %>
+        </nav>
+    </div>
+</header>

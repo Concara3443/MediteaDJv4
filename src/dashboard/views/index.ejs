@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<%- include('partials/head', { pageTitle: 'Inicio' }) %>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <img src="<%= basePath %>/logo.png" alt="Meditea DJ" class="hero-logo">
+                <h1>Bienvenido a Meditea DJ</h1>
+                <p>Bot de música para Discord con panel web</p>
+                <p class="stats">Reproduciendo en <%= bot.serverCount %> servidores</p>
+
+                <div class="hero-buttons">
+                    <% if (user) { %>
+                        <a href="<%= basePath %>/dashboard" class="btn btn-primary btn-large">Ir al Dashboard</a>
+                    <% } else { %>
+                        <a href="<%= basePath %>/auth/login" class="btn btn-primary btn-large">Iniciar Sesión con Discord</a>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <h3>Soporte para YouTube</h3>
+                    <p>Reproduce música de YouTube con la mejor calidad</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Soporte para Spotify</h3>
+                    <p>Enlaces de canciones y álbumes de Spotify</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Sistema de Colas</h3>
+                    <p>Gestiona tu lista de reproducción fácilmente</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Playlists Personalizadas</h3>
+                    <p>Guarda y carga tus playlists favoritas</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Control desde Dashboard</h3>
+                    <p>Controla la música desde tu navegador</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Alta Calidad</h3>
+                    <p>Audio de alta fidelidad con Lavalink</p>
+                </div>
+            </div>
+
+            <!-- Sección About the Developer -->
+            <div class="about-section">
+                <h2>Sobre el Desarrollador</h2>
+                <p>
+                    Meditea DJ fue creado por <strong>Guillermo Cortés</strong>, un desarrollador apasionado por la música y la tecnología.
+                    Este bot combina lo mejor de ambos mundos para ofrecer una experiencia musical única en Discord.
+                </p>
+                <div class="developer-links">
+                    <a href="https://guillermocort.es/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                        </svg>
+                        Portfolio
+                    </a>
+                    <a href="https://github.com/Concara3443" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/>
+                        </svg>
+                        GitHub
+                    </a>
+                    <a href="https://guillermocort.es/mediteadj/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
+                        </svg>
+                        Sobre Meditea DJ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <%- include('partials/footer') %>
+</body>
+</html>

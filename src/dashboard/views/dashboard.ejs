@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<%- include('partials/head', { pageTitle: 'Dashboard' }) %>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="dashboard-page">
+        <div class="container">
+            <h1>Selecciona un Servidor</h1>
+            <p>Elige un servidor para gestionar la música</p>
+
+            <% if (guilds.length === 0 && invitableGuilds.length === 0) { %>
+                <div class="no-guilds">
+                    <p>No tienes servidores en común con el bot.</p>
+                    <a href="https://discord.com/api/oauth2/authorize?client_id=<%= process.env.CLIENT_ID %>&permissions=36700160&scope=bot%20applications.commands" class="btn btn-primary" target="_blank">
+                        Invitar Bot a tu Servidor
+                    </a>
+                </div>
+            <% } else { %>
+                <% if (guilds.length > 0) { %>
+                    <div class="guilds-grid">
+                        <% guilds.forEach(guild => { %>
+                            <a href="<%= basePath %>/dashboard/<%= guild.id %>" class="guild-card">
+                                <img src="<%= guild.icon %>" alt="<%= guild.name %>" class="guild-icon">
+                                <div class="guild-info">
+                                    <h3><%= guild.name %></h3>
+                                    <p><%= guild.memberCount %> miembros</p>
+                                    <% if (guild.hasPlayer) { %>
+                                        <span class="status status-active">Reproduciendo</span>
+                                    <% } else { %>
+                                        <span class="status status-inactive">Inactivo</span>
+                                    <% } %>
+                                </div>
+                            </a>
+                        <% }); %>
+                    </div>
+                <% } %>
+
+                <% if (invitableGuilds.length > 0) { %>
+                    <div class="invitable-section">
+                        <h2>Invitar Bot a tus Servidores</h2>
+                        <p>Estos servidores no tienen el bot. Puedes invitarlo haciendo clic en el botón.</p>
+                        <div class="guilds-grid">
+                            <% invitableGuilds.forEach(guild => { %>
+                                <div class="guild-card guild-card-invitable">
+                                    <img src="<%= guild.icon %>" alt="<%= guild.name %>" class="guild-icon">
+                                    <div class="guild-info">
+                                        <h3><%= guild.name %></h3>
+                                        <span class="status status-not-added">Bot no añadido</span>
+                                        <a href="https://discord.com/api/oauth2/authorize?client_id=<%= process.env.CLIENT_ID %>&permissions=36700160&scope=bot%20applications.commands&guild_id=<%= guild.id %>&disable_guild_select=true" class="btn btn-primary btn-invite" target="_blank">
+                                            Invitar Bot
+                                        </a>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                <% } %>
+            <% } %>
+        </div>
+    </main>
+
+    <%- include('partials/footer') %>
+</body>
+</html>

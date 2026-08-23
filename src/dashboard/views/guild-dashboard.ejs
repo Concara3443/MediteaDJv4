@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<%- include('partials/head', { pageTitle: guild.name }) %>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="guild-dashboard-page">
+        <div class="container">
+            <div class="guild-header">
+                <img src="<%= guild.icon %>" alt="<%= guild.name %>" class="guild-icon-large">
+                <div>
+                    <h1><%= guild.name %></h1>
+                    <p><%= guild.memberCount %> miembros</p>
+                </div>
+            </div>
+
+            <div class="player-section">
+                <h2>Reproductor de Música</h2>
+
+                <!-- Search Widget -->
+                <%- include('partials/search-widget') %>
+
+                <div id="player-status" class="player-status">
+                    <% if (player.connected) { %>
+                        <span class="status status-active">Conectado</span>
+                    <% } else { %>
+                        <span class="status status-inactive">Desconectado</span>
+                        <p class="help-text">Usa el comando /play en Discord para iniciar el reproductor</p>
+                    <% } %>
+                </div>
+
+                <div id="current-track" class="current-track" style="display: none;">
+                    <div class="track-thumbnail">
+                        <img src="" alt="Miniatura" id="track-thumbnail">
+                    </div>
+                    <div class="track-info">
+                        <h3 id="track-title">-</h3>
+                        <p id="track-author">-</p>
+                        <div class="track-progress">
+                            <span id="track-position">0:00</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <span id="track-duration">0:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="player-controls">
+                    <button id="btn-prev" class="btn-control" disabled title="Anterior">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                        </svg>
+                    </button>
+                    <button id="btn-play-pause" class="btn-control btn-control-large" disabled>
+                        <svg id="icon-play" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <svg id="icon-pause" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                            <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                        </svg>
+                    </button>
+                    <button id="btn-skip" class="btn-control" disabled title="Siguiente">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                        </svg>
+                    </button>
+                    <button id="btn-stop" class="btn-control" disabled title="Detener">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="6" y="6" width="12" height="12"/>
+                        </svg>
+                    </button>
+                    <div class="volume-control">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                        </svg>
+                        <input type="range" id="volume-slider" min="0" max="100" value="<%= player.volume || 40 %>" disabled>
+                        <span id="volume-value"><%= player.volume || 40 %>%</span>
+                    </div>
+                    <button id="btn-loop" class="btn-control" disabled title="Repetir">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/>
+                        </svg>
+                        <span id="loop-mode">OFF</span>
+                    </button>
+                </div>
+
+                <div class="queue-section">
+                    <h3>Cola de Reproducción (<span id="queue-count">0</span>)</h3>
+                    <div id="queue-list" class="queue-list">
+                        <p class="empty-queue">La cola está vacía</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lyrics Panel -->
+            <%- include('partials/lyrics-panel') %>
+        </div>
+    </main>
+
+    <script>
+        const guildId = '<%= guild.id %>';
+        const basePath = '<%= basePath %>';
+        // Socket.IO debe usar el path completo para que nginx haga el proxy correctamente
+        const socket = io({
+            path: '/mediteadj/socket.io/'
+        });
+
+        // Estado del player
+        let playerState = {
+            connected: <%= player.connected ? 'true' : 'false' %>,
+            playing: <%= player.playing ? 'true' : 'false' %>,
+            paused: <%= player.paused ? 'true' : 'false' %>,
+            volume: <%= player.volume || 40 %>,
+            loop: '<%= player.loop || "none" %>'
+        };
+
+        // Conectar al room del guild
+        socket.emit('join-guild', guildId);
+
+        // Escuchar actualizaciones del player
+        socket.on('player-update', (data) => {
+            updatePlayer(data);
+        });
+
+        // Funciones de control
+        async function apiRequest(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            const response = await fetch(`${basePath}/api/guilds/${guildId}${endpoint}`, options);
+            return response.json();
+        }
+
+        document.getElementById('btn-play-pause').addEventListener('click', async () => {
+            await apiRequest('/player/pause', 'POST');
+        });
+
+        document.getElementById('btn-skip').addEventListener('click', async () => {
+            await apiRequest('/player/skip', 'POST');
+        });
+
+        document.getElementById('btn-stop').addEventListener('click', async () => {
+            if (confirm('¿Estás seguro de que quieres detener la reproducción?')) {
+                await apiRequest('/player/stop', 'POST');
+            }
+        });
+
+        document.getElementById('volume-slider').addEventListener('change', async (e) => {
+            const volume = parseInt(e.target.value);
+            await apiRequest('/player/volume', 'POST', { volume });
+        });
+
+        document.getElementById('btn-loop').addEventListener('click', async () => {
+            const modes = ['none', 'track', 'queue'];
+            const currentIndex = modes.indexOf(playerState.loop);
+            const nextMode = modes[(currentIndex + 1) % modes.length];
+            await apiRequest('/player/loop', 'POST', { mode: nextMode });
+        });
+
+        // Actualizar UI
+        function updatePlayer(data) {
+            if (!data || !data.connected) {
+                document.getElementById('player-status').innerHTML = `
+                    <span class="status status-inactive">Desconectado</span>
+                    <p class="help-text">Usa el comando /play en Discord para iniciar el reproductor</p>
+                `;
+                document.getElementById('current-track').style.display = 'none';
+                disableControls();
+                return;
+            }
+
+            playerState = data;
+
+            // Actualizar estado
+            document.getElementById('player-status').innerHTML = `
+                <span class="status status-active">Conectado</span>
+            `;
+
+            // Actualizar canción actual
+            if (data.current) {
+                document.getElementById('current-track').style.display = 'flex';
+                document.getElementById('track-thumbnail').src = data.current.thumbnail || '/img/default-track.png';
+                document.getElementById('track-title').textContent = data.current.title;
+                document.getElementById('track-author').textContent = data.current.author;
+
+                const position = formatTime(data.position);
+                const duration = formatTime(data.current.duration);
+                document.getElementById('track-position').textContent = position;
+                document.getElementById('track-duration').textContent = duration;
+
+                const progress = (data.position / data.current.duration) * 100;
+                document.getElementById('progress-fill').style.width = progress + '%';
+            } else {
+                document.getElementById('current-track').style.display = 'none';
+            }
+
+            // Actualizar controles
+            enableControls();
+            updatePlayPauseButton(data.playing, data.paused);
+            updateLoopButton(data.loop);
+            document.getElementById('volume-slider').value = data.volume;
+            document.getElementById('volume-value').textContent = data.volume + '%';
+
+            // Actualizar cola
+            updateQueue(data.queue);
+        }
+
+        function enableControls() {
+            document.querySelectorAll('.btn-control, #volume-slider').forEach(el => {
+                el.disabled = false;
+            });
+        }
+
+        function disableControls() {
+            document.querySelectorAll('.btn-control, #volume-slider').forEach(el => {
+                el.disabled = true;
+            });
+        }
+
+        function updatePlayPauseButton(playing, paused) {
+            const iconPlay = document.getElementById('icon-play');
+            const iconPause = document.getElementById('icon-pause');
+
+            if (playing && !paused) {
+                iconPlay.style.display = 'none';
+                iconPause.style.display = 'block';
+            } else {
+                iconPlay.style.display = 'block';
+                iconPause.style.display = 'none';
+            }
+        }
+
+        function updateLoopButton(mode) {
+            const loopMode = document.getElementById('loop-mode');
+            const modeTexts = {
+                'none': 'OFF',
+                'track': 'UNO',
+                'queue': 'COLA'
+            };
+            loopMode.textContent = modeTexts[mode] || 'OFF';
+        }
+
+        function updateQueue(queue) {
+            const queueList = document.getElementById('queue-list');
+            const queueCount = document.getElementById('queue-count');
+
+            queueCount.textContent = queue.length;
+
+            if (queue.length === 0) {
+                queueList.innerHTML = '<p class="empty-queue">La cola está vacía</p>';
+                return;
+            }
+
+            queueList.innerHTML = queue.map((track, index) => `
+                <div class="queue-item">
+                    <span class="queue-number">${index + 1}</span>
+                    <img src="${track.thumbnail || '/img/default-track.png'}" alt="Miniatura" class="queue-thumbnail">
+                    <div class="queue-track-info">
+                        <p class="queue-track-title">${track.title}</p>
+                        <p class="queue-track-author">${track.author}</p>
+                    </div>
+                    <span class="queue-duration">${formatTime(track.duration)}</span>
+                </div>
+            `).join('');
+        }
+
+        function formatTime(ms) {
+            const seconds = Math.floor(ms / 1000);
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Cargar estado inicial
+        fetch(`${basePath}/api/guilds/${guildId}/player`)
+            .then(res => res.json())
+            .then(data => updatePlayer(data));
+
+        // Actualizar posición cada segundo
+        setInterval(() => {
+            if (playerState.playing && !playerState.paused && playerState.current) {
+                playerState.position += 1000;
+                const position = formatTime(playerState.position);
+                document.getElementById('track-position').textContent = position;
+
+                const progress = (playerState.position / playerState.current.duration) * 100;
+                document.getElementById('progress-fill').style.width = progress + '%';
+            }
+        }, 1000);
+    </script>
+
+    <!-- Search Functionality -->
+    <script src="<%= basePath %>/js/search.js"></script>
+    <script>
+        // Initialize search
+        initializeSearch(guildId, basePath, <%= user.isPremium ? 'true' : 'false' %>);
+    </script>
+
+    <!-- Lyrics Functionality -->
+    <script src="<%= basePath %>/js/lyrics.js"></script>
+    <script>
+        // Initialize lyrics
+        initializeLyrics(guildId, basePath, <%= user.isPremium ? 'true' : 'false' %>, socket);
+    </script>
+
+    <%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+<%- include('partials/head', { pageTitle: 'Error' }) %>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="error-page">
+        <div class="container">
+            <div class="error-box">
+                <h1>Error</h1>
+                <p><%= error %></p>
+                <a href="<%= basePath %>/dashboard" class="btn btn-primary">Volver al Dashboard</a>
+            </div>
+        </div>
+    </main>
+
+    <%- include('partials/footer') %>
+</body>
+</html>
