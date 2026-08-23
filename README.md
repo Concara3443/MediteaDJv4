@@ -1,112 +1,166 @@
-# Meditea DJ v4.0 - Bot de Música para Discord
+<div align="center">
+  <img src="logo.png" width="120" alt="Meditea DJ" />
 
-Bot de música exclusivo de Meditea Airlines para Discord con soporte para YouTube, Spotify, dashboard web elegante y sistema de playlists.
+  # Meditea DJ
 
-## Diseño Corporativo
+  **Música en tu servidor de Discord, sin trabas.** YouTube, Spotify, SoundCloud y Bandcamp, con cola, playlists, favoritos, letras y un dashboard web para controlarlo todo en tiempo real.
 
-Meditea DJ está diseñado con los colores corporativos de Meditea Airlines:
-- 🔵 **Azul Meditea**: #00F3F0 (Color principal)
-- 🟠 **Naranja Meditea**: #FFC200 (Color de acento)
-- 🎨 **Dashboard elegante**: Diseño moderno con gradientes y animaciones
-- ✈️ **Logo de Meditea Airlines**: Presente en todo el dashboard
+  ![Discord Verified](https://img.shields.io/badge/Discord-Verificado-5865F2?style=flat-square&logo=discord&logoColor=white)
+  ![discord.js](https://img.shields.io/badge/discord.js-14.25.1-5865F2?style=flat-square)
+  ![Lavalink](https://img.shields.io/badge/Lavalink-v4-FF6B6B?style=flat-square)
+  ![Status](https://img.shields.io/badge/estado-activo-00C2BF?style=flat-square)
+</div>
+
+<br>
+
+## Índice
+
+- [Características](#características)
+- [Comandos](#comandos)
+- [Instalación](#instalación)
+- [Configuración](#configuración)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Tecnologías](#tecnologías)
+- [Dashboard web](#dashboard-web)
+- [Soporte](#soporte)
+
+---
 
 ## Características
 
-### Comandos de Música
-- `/play <query>` - Reproduce canciones de YouTube o Spotify
-- `/pause` - Pausa la reproducción
-- `/resume` - Reanuda la reproducción
-- `/skip` - Salta a la siguiente canción
-- `/stop` - Detiene y limpia la cola
+| | |
+|---|---|
+| 🎶 **Multi-fuente** | YouTube, Spotify (canciones/álbumes/playlists), SoundCloud, Bandcamp |
+| 📃 **Cola inteligente** | Hasta 100 canciones, con paginación, `shuffle` y loop de canción o de cola |
+| 💾 **Playlists persistentes** | Guarda hasta 50 canciones por playlist y cárgalas cuando quieras |
+| ⭐ **Favoritos** | Guarda canciones sueltas por usuario y reprodúcelas con un comando |
+| 🔁 **Autoplay** | Cuando la cola se vacía, sigue sonando música relacionada automáticamente |
+| 📝 **Letras** | `/lyrics` busca la letra de la canción actual (o cualquier otra) vía Genius |
+| 💻 **Dashboard web** | Login con Discord OAuth2, control en tiempo real vía Socket.IO |
+| ⏰ **Auto-disconnect** | Se va del canal a los 30s sin usuarios; cancela la salida si alguien vuelve |
+| 🛡️ **Errores claros** | Mensajes de error siempre en ephemeral, con la causa y cómo resolverla |
+| ⚡ **Baja latencia** | Audio servido por Lavalink v4 |
 
-### Comandos de Cola
-- `/queue [page]` - Muestra la cola de reproducción
-- `/nowplaying` - Muestra la canción actual con barra de progreso
-- `/remove <posición>` - Elimina una canción de la cola
+## Comandos
 
-### Comandos Avanzados
-- `/seek <tiempo>` - Ir a posición específica (MM:SS o segundos)
-- `/loop <mode>` - Cambiar modo de repetición (none/track/queue)
-- `/shuffle` - Mezclar la cola aleatoriamente
-- `/volume <0-100>` - Ajustar volumen
-- `/lyrics [canción]` - Ver la letra de la canción actual o buscar una específica
+### Música
 
-### Sistema de Playlists
-- `/playlist save <nombre>` - Guardar cola actual como playlist
-- `/playlist load <nombre>` - Cargar playlist guardada
-- `/playlist delete <nombre>` - Eliminar playlist
-- `/playlist list` - Ver tus playlists
-- `/playlist info <nombre>` - Info detallada de una playlist
+| Comando | Descripción |
+|---|---|
+| `/play <query>` | Reproduce una canción o playlist (YouTube, Spotify, SoundCloud, Bandcamp) |
+| `/playnext <query>` | Añade una canción para sonar justo después de la actual |
+| `/pause` / `/resume` | Pausa o reanuda la reproducción |
+| `/skip` | Salta a la siguiente canción |
+| `/stop` | Detiene la reproducción y limpia la cola |
+| `/volume <0-100>` | Ajusta el volumen |
+| `/seek <tiempo>` | Salta a una posición (`MM:SS` o segundos) |
+
+### Cola
+
+| Comando | Descripción |
+|---|---|
+| `/queue [page]` | Muestra la cola de reproducción, paginada |
+| `/nowplaying` | Canción actual con barra de progreso |
+| `/remove <posición>` | Elimina una canción de la cola |
+| `/shuffle` | Mezcla la cola aleatoriamente |
+| `/loop <none\|track\|queue>` | Cambia el modo de repetición |
+
+### Playlists y favoritos
+
+| Comando | Descripción |
+|---|---|
+| `/playlist save <nombre>` | Guarda la cola actual como playlist |
+| `/playlist load <nombre>` | Carga una playlist guardada |
+| `/playlist list` / `/playlist info <nombre>` | Lista tus playlists o el detalle de una |
+| `/playlist delete <nombre>` | Elimina una playlist |
+| `/favorites add` | Añade la canción actual a favoritos |
+| `/favorites list [page]` | Lista tus favoritos |
+| `/favorites play <search>` | Reproduce un favorito por título o artista |
+| `/favorites remove <number>` | Elimina un favorito |
+
+### Otros
+
+| Comando | Descripción |
+|---|---|
+| `/autoplay on\|off\|status` | Activa/desactiva que el bot siga sonando música relacionada al vaciarse la cola |
+| `/lyrics [canción]` | Letra de la canción actual, o busca una específica |
+
+<details>
+<summary>Ejemplos de uso</summary>
+
+```
+/play despacito
+/play https://www.youtube.com/watch?v=kJQP7kiw5Fk
+/play https://open.spotify.com/track/...
+
+/queue 2
+/loop queue
+/playlist save mis-favoritas
+/playlist load mis-favoritas
+
+/lyrics
+/lyrics Luis Fonsi - Despacito
+```
+
+</details>
 
 ## Instalación
 
 ### Requisitos
+
 - Node.js 18 o superior
 - Java 17 o superior (para Lavalink)
 - Git (opcional)
 
-### Paso 1: Configurar OAuth2 en Discord Developer Portal
+### 1. Configurar OAuth2 en el Discord Developer Portal
 
-**IMPORTANTE para el Dashboard**: Debes configurar el Redirect URI en Discord.
+Necesario para que el dashboard pueda iniciar sesión con Discord.
 
 1. Ve a [Discord Developer Portal](https://discord.com/developers/applications)
-2. Selecciona tu aplicación (ID: `887046390524551178`)
-3. En el menú lateral, ve a **"OAuth2"**
-4. Busca la sección **"Redirects"**
-5. Haz clic en **"Add Redirect"**
-6. Escribe exactamente: **`http://localhost:3000/auth/callback`**
-7. Haz clic en **"Save Changes"** (botón verde abajo)
+2. Selecciona tu aplicación
+3. **OAuth2 → Redirects → Add Redirect**
+4. Añade exactamente: `http://localhost:3000/auth/callback`
+5. Guarda los cambios
 
-✅ Ahora podrás iniciar sesión en el dashboard sin errores.
-
-### Paso 2: Instalar dependencias
+### 2. Instalar dependencias
 
 ```bash
 npm install
 ```
 
-### Paso 3: Iniciar Lavalink
+### 3. Iniciar Lavalink
 
-Abre una terminal **separada** y ejecuta:
+En una terminal separada:
 
 ```bash
 cd lavalink
 java -jar Lavalink.jar
 ```
 
-Espera a ver el mensaje: **"Lavalink is ready to accept connections"**
+Espera al mensaje **"Lavalink is ready to accept connections"**.
 
-### Paso 4: Iniciar el bot
-
-En otra terminal:
+### 4. Iniciar el bot
 
 ```bash
-npm start
-```
-
-O para desarrollo con auto-reload:
-
-```bash
-npm run dev
+npm start        # producción
+npm run dev       # desarrollo, con auto-reload
 ```
 
 ## Configuración
 
-### Archivo `.env`
-
-Las credenciales principales están configuradas en el archivo `.env`:
+Las credenciales viven en `.env` (usa `.env.example` como plantilla — **nunca subas tu `.env` real**):
 
 ```env
 # Discord Bot
-DISCORD_TOKEN=ODg3MDQ2MzkwNTI0NTUxMTc4.GQyMyI.MaSpHpNYxpXbXYNkL-u2v1BqHq0PMqNMNCb32g
-CLIENT_ID=887046390524551178
-CLIENT_SECRET=pWYDxMMFBuXkzHqQwFfEDQ3cKjDVbKm3
-OWNER_ID=309357304531124224
-GUILD_ID=1171392715343286292
+DISCORD_TOKEN=tu_token_de_discord
+CLIENT_ID=tu_client_id
+CLIENT_SECRET=tu_client_secret
+OWNER_ID=tu_discord_id
+GUILD_ID=id_del_servidor_de_pruebas
 
-# Spotify (ya configurado)
-SPOTIFY_CLIENT_ID=03cd7659e0f24522bb8f0d108ee523d6
-SPOTIFY_CLIENT_SECRET=b9444eddc2ad4e97a32c0e0b1c8fbb5e
+# Spotify
+SPOTIFY_CLIENT_ID=tu_spotify_client_id
+SPOTIFY_CLIENT_SECRET=tu_spotify_client_secret
 
 # Dashboard
 DASHBOARD_PORT=3000
@@ -114,215 +168,63 @@ DASHBOARD_URL=http://localhost:3000
 REDIRECT_URI=http://localhost:3000/auth/callback
 ```
 
-### Configuración de Spotify
+Las mismas credenciales de Spotify van también en `lavalink/application.yml` (bloque `plugins.lavasrc.spotify`). El bot reproduce enlaces directos de canción, álbum y playlist de Spotify — Lavalink los resuelve vía búsqueda en YouTube (LavaSrc).
 
-Las credenciales de Spotify ya están configuradas tanto en el `.env` como en `lavalink/application.yml`.
-El bot puede reproducir:
-- Enlaces de canciones de Spotify: `https://open.spotify.com/track/...`
-- Enlaces de álbumes de Spotify: `https://open.spotify.com/album/...`
-- Enlaces de playlists de Spotify: `https://open.spotify.com/playlist/...`
-
-## Estructura del Proyecto
+## Estructura del proyecto
 
 ```
-MeditaDJv4/
+mediteadj/
 ├── src/
 │   ├── bot/                    # Código del bot de Discord
-│   │   ├── commands/           # Comandos slash
-│   │   │   ├── music/          # Comandos de música
-│   │   │   └── playlists/      # Comandos de playlists
-│   │   ├── events/             # Eventos de Discord
-│   │   ├── structures/         # Clases principales
-│   │   └── utils/              # Utilidades
-│   ├── dashboard/              # Dashboard web (Fase 7-8)
-│   ├── database/               # Base de datos SQLite
-│   │   ├── models/             # Modelos de datos
-│   │   └── migrations/         # Migraciones SQL
-│   └── config/                 # Configuración
-├── lavalink/                   # Servidor de audio Lavalink
-├── data/                       # Base de datos (auto-generado)
-└── logs/                       # Logs (auto-generado)
+│   │   ├── commands/           # Comandos slash (music/, playlists/)
+│   │   ├── events/             # Eventos de Discord y de Kazagumo
+│   │   ├── structures/         # Clases principales (MusicClient)
+│   │   └── utils/              # Embeds, permisos, metadata, etc.
+│   ├── dashboard/               # Dashboard web (Express + EJS + Socket.IO)
+│   ├── database/                # Base de datos SQLite
+│   │   ├── models/              # Modelos de datos
+│   │   └── migrations/          # Migraciones SQL
+│   └── config/                  # Configuración y constantes
+├── lavalink/                    # Servidor de audio Lavalink
+├── data/                        # Base de datos (auto-generado)
+└── logs/                        # Logs (auto-generado)
 ```
 
-## Tecnologías Utilizadas
+## Tecnologías
 
-- **discord.js v14.25.1** - Librería oficial de Discord
-- **Kazagumo v3.4.0** - Wrapper de Shoukaku con sistema de colas
-- **Shoukaku v4.0.1** - Cliente Lavalink de bajo nivel
-- **Lavalink v4** - Servidor de audio de alta calidad
-  - YouTube Plugin v1.16.0
-  - LavaSrc Plugin v4.8.1 (Spotify y más)
-- **sqlite3** - Base de datos para playlists y configuración
-- **Express v4** - Framework web para dashboard
-- **Socket.IO v4** - Comunicación en tiempo real
-- **Passport Discord OAuth2** - Autenticación segura con Discord
-- **EJS** - Motor de plantillas para vistas
+| | |
+|---|---|
+| [discord.js](https://discord.js.org/) v14.25.1 | Librería oficial de Discord |
+| [Kazagumo](https://github.com/Takiyo0/Kazagumo) v3.4.0 | Wrapper de Shoukaku con sistema de colas |
+| [Shoukaku](https://github.com/shipgirlproject/Shoukaku) v4.3.0 | Cliente Lavalink de bajo nivel |
+| [Lavalink](https://github.com/lavalink-devs/Lavalink) v4 | Servidor de audio — plugins YouTube y LavaSrc (Spotify) |
+| sqlite3 | Base de datos de playlists, favoritos y configuración |
+| Express v4 + EJS | Servidor y plantillas del dashboard |
+| Socket.IO v4 | Sincronización en tiempo real entre Discord y el dashboard |
+| Passport (Discord OAuth2) | Login del dashboard |
 
-## Estado del Desarrollo
+## Dashboard web
 
-### ✅ Completado (Fases 1-8)
-
-- [x] Infraestructura base y configuración
-- [x] Bot core con Lavalink
-- [x] Comandos básicos de música (play, pause, resume, skip, stop)
-- [x] Comandos de cola (queue, nowplaying, remove)
-- [x] Comandos avanzados (seek, loop, shuffle, volume)
-- [x] Sistema completo de playlists persistentes
-- [x] **Soporte completo para Spotify** (canciones, álbumes, playlists)
-- [x] **Dashboard web con Express y Discord OAuth2**
-- [x] **Dashboard frontend con control en tiempo real (Socket.IO)**
-- [x] Auto-disconnect cuando el canal de voz está vacío (30 seg)
-- [x] Cancelación inteligente de auto-disconnect
-- [x] Cooldowns en comandos
-- [x] Manejo de errores robusto
-- [x] Base de datos SQLite con migraciones
-
-### 🚧 Futuras Mejoras (Opcional)
-
-- [ ] Modelos adicionales (Guild, Stats)
-- [ ] Estadísticas de uso por servidor
-- [ ] Sistema de votación para skip
-- [ ] Filtros de audio (bass boost, nightcore, etc.)
-- [ ] Testing exhaustivo
-
-## Uso
-
-1. **Iniciar Lavalink primero** en una terminal separada
-2. **Iniciar el bot** con `npm start` o `npm run dev`
-3. El bot se conectará automáticamente y registrará los slash commands en tu servidor
-4. Úsalo en Discord con `/play <canción>` para empezar
-5. **Dashboard web** disponible en `http://localhost:3000`
-
-## Dashboard Web
-
-### Acceder al Dashboard
-
-1. Abre tu navegador y ve a `http://localhost:3000`
-2. Haz clic en "Iniciar Sesión con Discord"
-3. Autoriza la aplicación
-4. Selecciona un servidor de la lista
-5. Controla la música desde tu navegador
-
-### Características del Dashboard
-
-- ✅ **Autenticación con Discord OAuth2** - Inicio de sesión seguro
-- 🎵 **Vista de canción actual** - Miniatura, título, artista
-- 📊 **Barra de progreso en tiempo real** - Actualización cada segundo
-- ⏯️ **Controles de reproducción** - Play/Pause, Skip, Stop
-- 🔊 **Control de volumen** - Slider de 0-100%
-- 🔁 **Modos de loop** - Ninguno, Canción, Cola
-- 📝 **Cola completa** - Ve todas las canciones en espera
-- 🔴 **Actualizaciones en vivo** - Socket.IO para cambios instantáneos
-
-### Vista del Dashboard
-
-El dashboard muestra:
-- Información del servidor (nombre, icono, miembros)
-- Estado del reproductor (conectado/desconectado)
-- Canción actual con miniatura
-- Controles de reproducción intuitivos
-- Cola de reproducción con scroll
-- Todo en tiempo real sin necesidad de recargar
-
-## Comandos de Música
-
-### Reproducir música
-
-```
-/play despacito
-/play https://www.youtube.com/watch?v=kJQP7kiw5Fk
-/play https://open.spotify.com/track/...
-```
-
-### Controlar la reproducción
-
-```
-/pause          # Pausar
-/resume         # Reanudar
-/skip           # Saltar canción
-/stop           # Detener todo
-/volume 80      # Volumen al 80%
-```
-
-### Gestionar la cola
-
-```
-/queue          # Ver cola
-/queue 2        # Ver página 2
-/nowplaying     # Ver canción actual
-/remove 3       # Eliminar canción #3
-/shuffle        # Mezclar cola
-```
-
-### Modos de repetición
-
-```
-/loop none      # Sin repetición
-/loop track     # Repetir canción actual
-/loop queue     # Repetir toda la cola
-```
-
-### Playlists
-
-```
-/playlist save mis-favoritas      # Guardar cola actual
-/playlist load mis-favoritas      # Cargar playlist
-/playlist list                    # Ver todas tus playlists
-/playlist info mis-favoritas      # Info de una playlist
-/playlist delete mis-favoritas    # Eliminar playlist
-```
-
-### Letras de Canciones
-
-```
-/lyrics                           # Ver letra de la canción actual
-/lyrics despacito                 # Buscar letra de una canción específica
-/lyrics Luis Fonsi - Despacito    # Buscar con artista y canción
-```
+1. Abre `http://localhost:3000` (o tu `DASHBOARD_URL` en producción)
+2. Inicia sesión con Discord y autoriza la aplicación
+3. Elige un servidor de la lista
+4. Controla la música desde el navegador — play/pausa, skip, volumen, loop y cola completa, todo sincronizado al instante con lo que pasa en Discord
 
 ## Soporte
 
-Si encuentras algún problema:
+Si algo falla:
 
-1. Verifica que Lavalink esté corriendo
-2. Revisa los logs en la consola
-3. Verifica tu configuración en `.env`
-4. Asegúrate de tener los permisos necesarios en Discord
-
-## Características Destacadas
-
-- **✈️ Diseño Corporativo Meditea**: Colores azul (#00F3F0) y naranja (#FFC200) de Meditea Airlines
-- **🎨 Dashboard Elegante**: Interfaz moderna con gradientes, animaciones y efectos visuales
-- **🎵 Soporte Multi-Fuente**: YouTube, Spotify (canciones/álbumes/playlists), SoundCloud, Bandcamp
-- **💻 Dashboard Web Completo**: Control desde navegador con actualizaciones en tiempo real
-- **🔐 OAuth2 Seguro**: Autenticación con Discord para acceso al dashboard
-- **📝 Cola Inteligente**: Hasta 100 canciones con paginación
-- **💾 Playlists Personales**: Guarda hasta 50 canciones por playlist
-- **📃 Letras de Canciones**: Comando /lyrics para ver letras de cualquier canción
-- **⏰ Auto-Disconnect Inteligente**: Se desconecta después de 30 segundos sin usuarios (cancelable si alguien regresa)
-- **🔍 Búsqueda Avanzada**: Seek, loop modes (none/track/queue), shuffle
-- **⚡ Performance**: Optimizado con Lavalink v4 para baja latencia
-- **🔄 Actualizaciones en Vivo**: Socket.IO para sincronización instantánea
-- **🛡️ Manejo de Errores**: Mensajes claros y útiles con validación completa
-
-## Posibles Futuras Actualizaciones
-
-- Estadísticas de reproducción por servidor
-- Sistema de votación para skip
-- Filtros de audio (bass boost, nightcore, etc.)
-- Modo DJ con roles especiales
-- Integración con Apple Music, Deezer, etc.
-- Sistema de favoritos personales
-- Comandos de ecualizador
-
-## Licencia
-
-ISC
-
-## Autor
-
-Guillermo Cortés
+1. Verifica que Lavalink esté corriendo y conectado
+2. Revisa los logs (`journalctl -u lavalink` / `journalctl -u mediteadj` en producción)
+3. Verifica tu configuración en `.env` y `lavalink/application.yml`
+4. Asegúrate de que el bot tiene permisos de **Ver Canal**, **Conectar** y **Hablar** en el canal de voz
 
 ---
 
-**Meditea DJ v4.0** - El bot de música exclusivo de Meditea Airlines 🎵✈️
+<div align="center">
+
+**Meditea DJ** — un proyecto de Meditea Airlines 🎵✈️
+
+Licencia ISC · [Guillermo Cortés](https://github.com/Concara3443)
+
+</div>
