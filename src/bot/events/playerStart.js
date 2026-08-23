@@ -161,7 +161,11 @@ module.exports = {
                 }, 10000); // Actualizar cada 10 segundos
 
             } catch (error) {
-                console.error('[PlayerStart] Error al enviar mensaje:', error);
+                if (error.code === 50001 || error.code === 50013) {
+                    console.error(`[PlayerStart] No puedo publicar el "reproduciendo ahora" en #${channel.name} (${channel.id}, guild ${player.guildId}): me falta permiso (Ver Canal / Enviar Mensajes / Insertar Enlaces) en ese canal.`);
+                } else {
+                    console.error('[PlayerStart] Error al enviar mensaje:', error);
+                }
             }
         });
 
