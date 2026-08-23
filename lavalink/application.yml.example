@@ -4,7 +4,7 @@ server:
 
 lavalink:
   server:
-    password: "youshallnotpass"
+    password: "cambia_esta_contraseña"
     sources:
       youtube: false  # IMPORTANTE: Deshabilitar el source antiguo
       bandcamp: true
@@ -72,7 +72,7 @@ plugins:
       deezer: false
       yandexmusic: false
     spotify:
-      clientId: "03cd7659e0f24522bb8f0d108ee523d6"
-      clientSecret: "b9444eddc2ad4e97a32c0e0b1c8fbb5e"
-      spDc: "AQBC2yORX3LkK7o_VzOToBP5ocpy-3PlnOga8gDlOUPwkVdqPegv-mh8ClyCezDgoxV4jX7Pb4MAGO9ytdQHRkrbCiOYfeSCySts9MBzWKpkC5hO8cUxcSLaL8wepkK8R4TpFH7jaSuUjivUkEz9sfGLu4JnKjoPlfCsU_GcgBk5Zg0uMGlyUbFgtfosZDGmP6R3JngDBT9HJuyTBzA"
+      clientId: "tu_spotify_client_id"
+      clientSecret: "tu_spotify_client_secret"
+      spDc: "tu_cookie_sp_dc_de_open.spotify.com"
       countryCode: "ES"

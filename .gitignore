@@ -7,6 +7,10 @@ Lavalink-musl.jar
 data/*.db
 _nul
 
+# Config real de Lavalink: lleva client secrets y la cookie spDc de Spotify.
+# Usa lavalink/application.yml.example como plantilla.
+lavalink/application.yml
+
 # Logs
 logs
 *.log
