@@ -125,6 +125,16 @@ module.exports = {
 
         } catch (error) {
             console.error('[Play Command] Error:', error);
+
+            if (error.message && error.message.includes('voice connection is not established')) {
+                return interaction.editReply({
+                    embeds: [MusicEmbeds.error(
+                        'No pude conectarme al canal de voz',
+                        `Discord no respondió a la petición de unirme a ${voiceChannel}. Casi siempre es un permiso que falta ahí (o en su categoría) — revisa que tenga **Ver Canal**, **Conectar** y **Hablar**.`
+                    )]
+                });
+            }
+
             return interaction.editReply({
                 embeds: [MusicEmbeds.error(
                     'Error al reproducir',

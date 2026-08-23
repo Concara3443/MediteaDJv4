@@ -110,11 +110,22 @@ class PermissionChecker {
     static checkBotPermissions(interaction, channel) {
         const permissions = channel.permissionsFor(interaction.guild.members.me);
 
+        if (!permissions.has(PermissionFlagsBits.ViewChannel)) {
+            interaction.reply({
+                embeds: [MusicEmbeds.error(
+                    'Sin permisos',
+                    `No tengo permiso para **ver** ${channel} — sin eso Discord no me deja entrar, aunque "Conectar" esté permitido. Pide a un admin que me dé "Ver Canal" ahí (o en su categoría).`
+                )],
+                flags: MessageFlags.Ephemeral
+            });
+            return false;
+        }
+
         if (!permissions.has(PermissionFlagsBits.Connect)) {
             interaction.reply({
                 embeds: [MusicEmbeds.error(
                     'Sin permisos',
-                    'No tengo permiso para conectarme a ese canal de voz.'
+                    `No tengo permiso para **conectarme** a ${channel}. Pide a un admin que me dé "Conectar" ahí (o en su categoría).`
                 )],
                 flags: MessageFlags.Ephemeral
             });
