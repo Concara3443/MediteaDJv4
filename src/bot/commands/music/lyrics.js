@@ -3,6 +3,7 @@ const { Client } = require('genius-lyrics');
 const { COLORS } = require('../../../config/constants');
 const { getYouTubeMetadata } = require('../../utils/youtubeMetadata');
 const { searchMusicBrainz } = require('../../utils/musicbrainz');
+const PermissionChecker = require('../../utils/permissions');
 
 // Inicializar cliente de Genius con Access Token
 const genius = new Client(process.env.GENIUS_ACCESS_TOKEN);
@@ -30,7 +31,7 @@ module.exports = {
                 const player = client.kazagumo.players.get(interaction.guild.id);
 
                 if (!player || !player.queue.current) {
-                    return interaction.editReply({
+                    return PermissionChecker.sendEphemeral(interaction, {
                         embeds: [new EmbedBuilder()
                             .setColor(COLORS.ERROR)
                             .setDescription('❌ No hay ninguna canción reproduciéndose actualmente.\nUsa `/lyrics <canción>` para buscar una específica.')
@@ -142,7 +143,7 @@ module.exports = {
             }
 
             if (!searches || searches.length === 0) {
-                return interaction.editReply({
+                return PermissionChecker.sendEphemeral(interaction, {
                     embeds: [new EmbedBuilder()
                         .setColor(COLORS.WARNING)
                         .setTitle('🔍 No se encontraron letras')
@@ -193,7 +194,7 @@ module.exports = {
 
             if (filteredResults.length === 0) {
                 console.log('[Lyrics] ❌ Todos los resultados fueron filtrados (álbumes/discografías)');
-                return interaction.editReply({
+                return PermissionChecker.sendEphemeral(interaction, {
                     embeds: [new EmbedBuilder()
                         .setColor(COLORS.WARNING)
                         .setTitle('🔍 No se encontraron letras válidas')
@@ -249,7 +250,7 @@ module.exports = {
             let lyrics = await song.lyrics();
 
             if (!lyrics || lyrics.trim().length === 0) {
-                return interaction.editReply({
+                return PermissionChecker.sendEphemeral(interaction, {
                     embeds: [new EmbedBuilder()
                         .setColor(COLORS.WARNING)
                         .setTitle('🔍 No se encontraron letras')
@@ -330,7 +331,7 @@ module.exports = {
         } catch (error) {
             console.error('[Lyrics] Error:', error);
 
-            return interaction.editReply({
+            return PermissionChecker.sendEphemeral(interaction, {
                 embeds: [new EmbedBuilder()
                     .setColor(COLORS.ERROR)
                     .setTitle('❌ Error al buscar letras')

@@ -186,12 +186,11 @@ module.exports = {
         const playlist = playlistModel.getPlaylist(interaction.user.id, interaction.guild.id, name);
 
         if (!playlist) {
-            return interaction.editReply({
-                embeds: [MusicEmbeds.error(
-                    'Playlist no encontrada',
-                    `No tienes ninguna playlist llamada **${name}** en este servidor.`
-                )]
-            });
+            return PermissionChecker.sendError(
+                interaction,
+                'Playlist no encontrada',
+                `No tienes ninguna playlist llamada **${name}** en este servidor.`
+            );
         }
 
         // Obtener o crear player

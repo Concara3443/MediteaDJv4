@@ -2,6 +2,11 @@ const { EmbedBuilder } = require('discord.js');
 const { COLORS, EMOJIS } = require('../../config/constants');
 const { formatTime, progressBar } = require('./formatTime');
 
+// Texto de invitación/publi para el footer de los embeds públicos (no se
+// pone en error/warning porque esos son ephemeral: solo los ve quien ya usa el bot).
+const DASHBOARD_HOST = (process.env.DASHBOARD_URL || 'https://guillermocort.es/mediteadj').replace(/^https?:\/\//, '');
+const INVITE_FOOTER = `Invita a Meditea DJ: ${DASHBOARD_HOST}`;
+
 class MusicEmbeds {
     /**
      * Embed de canción añadida a la cola
@@ -21,6 +26,7 @@ class MusicEmbeds {
                 { name: 'Solicitado por', value: requester.toString(), inline: true }
             )
             .setThumbnail(track.thumbnail || null)
+            .setFooter({ text: INVITE_FOOTER })
             .setTimestamp();
     }
 
@@ -38,7 +44,7 @@ class MusicEmbeds {
             .setURL(track.uri)
             .setDescription(`**Autor:** ${track.author}\n**Duración:** ${formatTime(track.length)}`)
             .setThumbnail(track.thumbnail || null)
-            .setFooter({ text: `Solicitado por ${requester.tag}`, iconURL: requester.displayAvatarURL() })
+            .setFooter({ text: `Solicitado por ${requester.tag} • ${INVITE_FOOTER}`, iconURL: requester.displayAvatarURL() })
             .setTimestamp();
     }
 
@@ -50,6 +56,7 @@ class MusicEmbeds {
             .setColor(COLORS.SUCCESS)
             .setTitle(`${EMOJIS.SUCCESS} ${title}`)
             .setDescription(description)
+            .setFooter({ text: INVITE_FOOTER })
             .setTimestamp();
     }
 
@@ -107,7 +114,7 @@ class MusicEmbeds {
                 { name: 'Duración total', value: formatTime(queue.reduce((acc, track) => acc + track.length, current.length)), inline: true },
                 { name: 'Volumen', value: `${player.volume}%`, inline: true }
             )
-            .setFooter({ text: `Página ${page}/${totalPages} • Loop: ${player.loop || 'Desactivado'}` })
+            .setFooter({ text: `Página ${page}/${totalPages} • Loop: ${player.loop || 'Desactivado'} • ${INVITE_FOOTER}` })
             .setTimestamp();
 
         return embed;
@@ -138,6 +145,7 @@ class MusicEmbeds {
                 { name: 'Loop', value: player.loop === 'track' ? 'Canción' : player.loop === 'queue' ? 'Cola' : 'Desactivado', inline: true },
                 { name: 'En cola', value: String(player.queue.length), inline: true }
             )
+            .setFooter({ text: INVITE_FOOTER })
             .setTimestamp();
     }
 }

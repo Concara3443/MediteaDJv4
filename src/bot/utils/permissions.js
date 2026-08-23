@@ -3,6 +3,33 @@ const MusicEmbeds = require('./embeds');
 
 class PermissionChecker {
     /**
+     * Envía un embed de error siempre en ephemeral, incluso si la interacción
+     * ya fue diferida públicamente (deferReply sin ephemeral): en ese caso
+     * borra el "pensando..." público y lo sustituye por un followUp ephemeral,
+     * porque una respuesta ya deferida/editada no puede pasar a ephemeral.
+     */
+    static async sendError(interaction, title, description) {
+        return this.sendEphemeral(interaction, { embeds: [MusicEmbeds.error(title, description)] });
+    }
+
+    /**
+     * Igual que sendError pero acepta un payload de reply ya construido
+     * (útil cuando el embed no viene de MusicEmbeds.error, p.ej. lyrics.js).
+     */
+    static async sendEphemeral(interaction, payload) {
+        if (interaction.deferred || interaction.replied) {
+            try {
+                await interaction.deleteReply();
+            } catch (err) {
+                // Ya borrada o inaccesible
+            }
+            return interaction.followUp({ ...payload, flags: MessageFlags.Ephemeral });
+        }
+
+        return interaction.reply({ ...payload, flags: MessageFlags.Ephemeral });
+    }
+
+    /**
      * Verifica si el usuario está en un canal de voz
      */
     static inVoiceChannel(interaction) {

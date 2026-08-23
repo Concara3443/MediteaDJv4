@@ -417,15 +417,19 @@ function createNowPlayingEmbed(track, player) {
         )
         .setThumbnail(track.thumbnail || null);
 
+    const inviteFooter = `Invita a Meditea DJ: ${dashboardUrl.replace(/^https?:\/\//, '')}`;
+
     if (track.requester && track.requester.displayAvatarURL) {
         embed.setFooter({
-            text: `Solicitado por ${track.requester.username || track.requester.tag}`,
+            text: `Solicitado por ${track.requester.username || track.requester.tag} • ${inviteFooter}`,
             iconURL: track.requester.displayAvatarURL()
         });
     } else if (track.requester) {
         embed.setFooter({
-            text: `Solicitado por ${track.requester.username || track.requester.tag || 'Autoplay'}`
+            text: `Solicitado por ${track.requester.username || track.requester.tag || 'Autoplay'} • ${inviteFooter}`
         });
+    } else {
+        embed.setFooter({ text: inviteFooter });
     }
 
     return embed;

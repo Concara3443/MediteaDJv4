@@ -31,12 +31,11 @@ module.exports = {
             const result = await client.kazagumo.search(query, { requester: interaction.user });
 
             if (!result || !result.tracks.length) {
-                return interaction.editReply({
-                    embeds: [MusicEmbeds.error(
-                        'No se encontraron resultados',
-                        `No pude encontrar ninguna canción con: \`${query}\``
-                    )]
-                });
+                return PermissionChecker.sendError(
+                    interaction,
+                    'No se encontraron resultados',
+                    `No pude encontrar ninguna canción con: \`${query}\``
+                );
             }
 
             // Obtener o crear player
@@ -100,12 +99,11 @@ module.exports = {
             // Verificar límite de cola
             const queueSize = player.queue?.length || 0;
             if (queueSize >= LIMITS.QUEUE_SIZE) {
-                return interaction.editReply({
-                    embeds: [MusicEmbeds.error(
-                        'Cola llena',
-                        `La cola ha alcanzado el límite máximo de **${LIMITS.QUEUE_SIZE}** canciones.`
-                    )]
-                });
+                return PermissionChecker.sendError(
+                    interaction,
+                    'Cola llena',
+                    `La cola ha alcanzado el límite máximo de **${LIMITS.QUEUE_SIZE}** canciones.`
+                );
             }
 
             player.queue.add(track);
@@ -127,20 +125,18 @@ module.exports = {
             console.error('[Play Command] Error:', error);
 
             if (error.message && error.message.includes('voice connection is not established')) {
-                return interaction.editReply({
-                    embeds: [MusicEmbeds.error(
-                        'No pude conectarme al canal de voz',
-                        `Discord no respondió a la petición de unirme a ${voiceChannel}. Casi siempre es un permiso que falta ahí (o en su categoría) — revisa que tenga **Ver Canal**, **Conectar** y **Hablar**.`
-                    )]
-                });
+                return PermissionChecker.sendError(
+                    interaction,
+                    'No pude conectarme al canal de voz',
+                    `Discord no respondió a la petición de unirme a ${voiceChannel}. Casi siempre es un permiso que falta ahí (o en su categoría) — revisa que tenga **Ver Canal**, **Conectar** y **Hablar**.`
+                );
             }
 
-            return interaction.editReply({
-                embeds: [MusicEmbeds.error(
-                    'Error al reproducir',
-                    'Ocurrió un error al intentar reproducir la canción. Inténtalo de nuevo.'
-                )]
-            });
+            return PermissionChecker.sendError(
+                interaction,
+                'Error al reproducir',
+                'Ocurrió un error al intentar reproducir la canción. Inténtalo de nuevo.'
+            );
         }
     }
 };

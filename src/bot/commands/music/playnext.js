@@ -28,12 +28,11 @@ module.exports = {
             const result = await client.kazagumo.search(query, { requester: interaction.user });
 
             if (!result || !result.tracks.length) {
-                return interaction.editReply({
-                    embeds: [MusicEmbeds.error(
-                        'No se encontraron resultados',
-                        `No pude encontrar ninguna canción con: \`${query}\``
-                    )]
-                });
+                return PermissionChecker.sendError(
+                    interaction,
+                    'No se encontraron resultados',
+                    `No pude encontrar ninguna canción con: \`${query}\``
+                );
             }
 
             // Manejar playlists - añadir al principio de la cola
@@ -75,12 +74,11 @@ module.exports = {
 
             const queueSize = player.queue?.length || 0;
             if (queueSize >= LIMITS.QUEUE_SIZE) {
-                return interaction.editReply({
-                    embeds: [MusicEmbeds.error(
-                        'Cola llena',
-                        `La cola ha alcanzado el límite máximo de **${LIMITS.QUEUE_SIZE}** canciones.`
-                    )]
-                });
+                return PermissionChecker.sendError(
+                    interaction,
+                    'Cola llena',
+                    `La cola ha alcanzado el límite máximo de **${LIMITS.QUEUE_SIZE}** canciones.`
+                );
             }
 
             // Añadir en posición 0 (después de la canción actual)
@@ -95,12 +93,11 @@ module.exports = {
 
         } catch (error) {
             console.error('[PlayNext Command] Error:', error);
-            return interaction.editReply({
-                embeds: [MusicEmbeds.error(
-                    'Error al añadir',
-                    'Ocurrió un error al intentar añadir la canción. Inténtalo de nuevo.'
-                )]
-            });
+            return PermissionChecker.sendError(
+                interaction,
+                'Error al añadir',
+                'Ocurrió un error al intentar añadir la canción. Inténtalo de nuevo.'
+            );
         }
     }
 };
