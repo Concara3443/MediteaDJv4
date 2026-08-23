@@ -2,7 +2,7 @@
 .claude
 
 # Binarios de Lavalink y datos en vivo — no van en git
-lavalink/*.jar
+lavalink/**/*.jar
 Lavalink-musl.jar
 data/*.db
 _nul
