@@ -21,6 +21,16 @@ module.exports = (client) => {
         });
     });
 
+    // Términos de servicio
+    router.get('/legal/tos', (req, res) => {
+        res.render('legal-tos', { user: req.user || null });
+    });
+
+    // Política de privacidad
+    router.get('/legal/privacidad', (req, res) => {
+        res.render('legal-privacy', { user: req.user || null });
+    });
+
     // Página de login
     router.get('/login', (req, res) => {
         if (req.isAuthenticated()) {

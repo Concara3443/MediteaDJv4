@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<%- include('partials/head', { pageTitle: 'Política de Privacidad' }) %>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="hero">
+        <div class="container">
+            <div class="about-section legal-page">
+                <h1>Política de Privacidad</h1>
+                <p class="legal-updated">Última actualización: 23 de agosto de 2026</p>
+
+                <p>Esta política explica qué datos maneja Meditea DJ (el bot de Discord y su panel web) y para qué se usan. Meditea DJ es operado por Guillermo Cortés.</p>
+
+                <h2>1. Datos que maneja el bot en Discord</h2>
+                <p>Para reproducir música, el bot necesita ver tu ID de Discord (para saber quién pide una canción o gestiona una playlist) y el ID del servidor y canal de voz. El bot <strong>no lee el contenido de tus mensajes</strong> — solo responde a comandos de barra (slash commands).</p>
+
+                <h2>2. Datos al iniciar sesión en el panel web</h2>
+                <p>El login usa el OAuth2 de Discord con permisos <code>identify</code> y <code>guilds</code>. Esto nos da tu ID de Discord, nombre de usuario, avatar, y la lista de servidores en los que estás (para saber en cuáles puedes gestionar el bot). <strong>No pedimos tu email.</strong></p>
+                <p>Estos datos de sesión se guardan solo en una cookie temporal (máximo 7 días, o hasta que reinicie el servidor) — no se guardan en la base de datos solo por iniciar sesión.</p>
+
+                <h2>3. Datos que sí se guardan de forma permanente</h2>
+                <p>Cuando usas ciertas funciones, guardamos en una base de datos privada:</p>
+                <ul>
+                    <li><strong>Playlists</strong>: nombre y lista de canciones que guardes, ligadas a tu ID de Discord y al servidor.</li>
+                    <li><strong>Favoritos</strong>: título, artista, enlace y duración de las canciones que marques como favoritas.</li>
+                    <li><strong>Preferencias del servidor</strong>: prefijo de comandos, canal de música, rol de DJ, volumen — esto es configuración del servidor, no de una persona.</li>
+                    <li><strong>Estado premium</strong> (si aplica): tu ID y nombre de usuario, para saber qué funciones tienes activas.</li>
+                </ul>
+                <p>No guardamos tu email, ni el contenido de tus mensajes, ni tu historial de reproducción fuera de lo anterior.</p>
+
+                <h2>4. Servicios de terceros</h2>
+                <p>Para buscar y reproducir canciones, tu búsqueda (por ejemplo, el nombre de una canción) se envía a YouTube, Spotify o Genius (para letras) según la fuente. Estas plataformas no reciben tu identidad de Discord, solo el texto de la búsqueda.</p>
+
+                <h2>5. Dónde se guardan los datos</h2>
+                <p>Los datos se almacenan en una base de datos SQLite en un servidor privado, con acceso restringido por SSH y firewall.</p>
+
+                <h2>6. Cuánto tiempo se conservan</h2>
+                <p>Tus playlists y favoritos se conservan mientras uses el bot. Puedes borrarlos tú mismo con los comandos correspondientes, o pedirnos que los eliminemos todos (ver más abajo).</p>
+
+                <h2>7. Tus derechos</h2>
+                <p>Puedes pedirnos en cualquier momento que te digamos qué datos tenemos guardados sobre ti, o que los borremos por completo. Escribe a <a href="mailto:privacy@guillermocort.es">privacy@guillermocort.es</a> indicando tu ID de Discord (clic derecho sobre tu nombre en Discord → Copiar ID, con el modo desarrollador activado).</p>
+
+                <h2>8. Menores de edad</h2>
+                <p>Meditea DJ sigue las condiciones de Discord: no está dirigido a menores de 13 años.</p>
+
+                <h2>9. Cambios en esta política</h2>
+                <p>Si cambiamos algo importante, actualizaremos la fecha de arriba y lo reflejaremos en esta misma página.</p>
+
+                <h2>10. Contacto</h2>
+                <p><a href="mailto:privacy@guillermocort.es">privacy@guillermocort.es</a></p>
+
+                <p class="legal-back"><a href="<%= basePath %>/">&larr; Volver al inicio</a></p>
+            </div>
+        </div>
+    </main>
+
+    <%- include('partials/footer') %>
+</body>
+</html>
